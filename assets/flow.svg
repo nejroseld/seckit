@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="150" viewBox="0 0 900 150" role="img" aria-label="init, scan, fix">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748b"/></marker>
+  </defs>
+  <g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" text-anchor="middle">
+    <g transform="translate(20 20)">
+      <rect width="240" height="110" rx="16" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-opacity="0.6" stroke-width="2"/>
+      <text x="120" y="48" font-size="24" font-weight="700" fill="#10b981">init</text>
+      <text x="120" y="80" font-size="15" fill="#64748b">ставит сканеры</text>
+    </g>
+    <g transform="translate(330 20)">
+      <rect width="240" height="110" rx="16" fill="#0ea5e9" fill-opacity="0.12" stroke="#0ea5e9" stroke-opacity="0.6" stroke-width="2"/>
+      <text x="120" y="48" font-size="24" font-weight="700" fill="#0ea5e9">scan</text>
+      <text x="120" y="80" font-size="15" fill="#64748b">находки по приоритету</text>
+    </g>
+    <g transform="translate(640 20)">
+      <rect width="240" height="110" rx="16" fill="#a855f7" fill-opacity="0.12" stroke="#a855f7" stroke-opacity="0.6" stroke-width="2"/>
+      <text x="120" y="48" font-size="24" font-weight="700" fill="#a855f7">fix</text>
+      <text x="120" y="80" font-size="15" fill="#64748b">diff → ваше «да»</text>
+    </g>
+    <path d="M268 75H318" stroke="#64748b" stroke-width="2.5" marker-end="url(#a)"/>
+    <path d="M578 75H628" stroke="#64748b" stroke-width="2.5" marker-end="url(#a)"/>
+  </g>
+</svg>
