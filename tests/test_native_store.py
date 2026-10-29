@@ -1,3 +1,4 @@
+import _isolate  # noqa: F401
 import ctypes
 import unittest
 from types import SimpleNamespace
@@ -10,7 +11,7 @@ from guardkit.native_store import put_from_tui
 class NativeStoreTests(unittest.TestCase):
     def store(self, system="Darwin"):
         # Avoid requiring platform tools in unit tests.
-        return SimpleNamespace(system=system, _service=SecretStore._service,
+        return SimpleNamespace(system=system, is_native=True, _service=SecretStore._service,
                                put=lambda name, value: None)
 
     def test_linux_delegates_to_existing_pipe_based_put(self):
@@ -132,11 +133,15 @@ class NativeStoreTests(unittest.TestCase):
         self.assertEqual(ctypes.string_at(state["buffer"], len(b"private-value")),
                          b"\0" * len(b"private-value"))
 
-    def test_bad_name_and_non_darwin_platform_are_rejected(self):
+    def test_bad_name_is_rejected_and_unavailable_native_store_delegates(self):
         with self.assertRaises(SecretError):
             put_from_tui(self.store(), "../bad", "value")
-        with self.assertRaises(SecretError):
-            put_from_tui(self.store("Other"), "valid", "value")
+        calls = []
+        store = self.store()
+        store.is_native = False
+        store.put = lambda name, value: calls.append(name)
+        put_from_tui(store, "valid", "value")
+        self.assertEqual(calls, ["valid"])
 
 
 if __name__ == "__main__":

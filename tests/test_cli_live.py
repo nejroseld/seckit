@@ -1,4 +1,5 @@
 """Opt-in real-scanner CLI proposal/apply check in a disposable project."""
+import _isolate  # noqa: F401
 import json
 import os
 import select

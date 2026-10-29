@@ -1,3 +1,4 @@
+import _isolate  # noqa: F401
 import tempfile
 import unittest
 from contextlib import redirect_stdout

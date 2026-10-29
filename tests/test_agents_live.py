@@ -4,6 +4,7 @@ Run with GUARDKIT_LIVE_CODEX=1 after GuardKit scanners and their databases are
 available. It uses a throwaway fixture project and does not read the real repo.
 """
 from __future__ import annotations
+import _isolate  # noqa: F401
 
 import json
 import os

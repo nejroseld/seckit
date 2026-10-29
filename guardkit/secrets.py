@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import getpass
 import json
+import os
 import platform
 import re
 import shutil
@@ -19,6 +20,7 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Callable, Mapping
+
 
 
 SERVICE_PREFIX = "guardkit.secret."
@@ -33,14 +35,18 @@ class SecretError(Exception):
 class SecretStore:
     """Adapter for macOS Keychain or Linux Secret Service via native CLI tools."""
 
-    def __init__(self, system: str | None = None, runner: Callable = subprocess.run):
+    def __init__(self, system: str | None = None, runner: Callable = subprocess.run, vault=None):
         self.system = system or platform.system()
         self.runner = runner
         self.tool = "security" if self.system == "Darwin" else "secret-tool" if self.system == "Linux" else None
-        if self.tool is None:
-            raise SecretError("No supported native secret store on this platform")
-        if not shutil.which(self.tool):
-            raise SecretError(f"Required native store tool unavailable: {self.tool}")
+        if vault is None and os.name == "posix":
+            from .vault import FileVault
+            vault = FileVault()
+        self.vault = vault
+        self.is_native = self.tool is not None and bool(shutil.which(self.tool))
+        if not self.is_native and self.vault is None:
+            raise SecretError("No supported native secret store on this platform" if self.tool is None
+                              else f"Required native store tool unavailable: {self.tool}")
 
     @staticmethod
     def _service(name: str) -> str:
@@ -49,9 +55,27 @@ class SecretStore:
         return SERVICE_PREFIX + name
 
     def put(self, name: str, value: str) -> None:
-        service = self._service(name)
+        """Store in the native store; fall back to the encrypted file vault when it is unavailable."""
+        self._service(name)
         if not value or "\0" in value:
             raise SecretError("Secret must be nonempty text")
+        if self.is_native:
+            try:
+                self._native_put(name, value)
+            except SecretError:
+                if self.system == "Darwin" or self.vault is None:
+                    raise
+            else:
+                if self.vault is not None:
+                    try:
+                        self.vault.delete(name)
+                    except SecretError:
+                        pass
+                return
+        self.vault.put(name, value)
+
+    def _native_put(self, name: str, value: str) -> None:
+        service = self._service(name)
         if self.system == "Darwin":
             raise SecretError("Use put_interactive on macOS; security CLI has no safe stdin input")
         cmd = ["secret-tool", "store", "--label=Guardkit managed secret", "service", service, "account", "guardkit"]
@@ -69,7 +93,7 @@ class SecretStore:
     def put_interactive(self, name: str) -> None:
         """Store without putting a value in Python, argv, or an environment variable."""
         service = self._service(name)
-        if self.system == "Darwin":
+        if self.system == "Darwin" and self.is_native:
             # Apple's CLI prompts when -w is the final option; do not capture its output
             # or pass a password argument. The user enters the value at the native prompt.
             cmd = ["security", "add-generic-password", "-U", "-s", service,
@@ -84,8 +108,6 @@ class SecretStore:
             except Exception:
                 raise SecretError("Native secret store operation failed") from None
             return
-        if self.system != "Linux":
-            raise SecretError("No supported native secret store on this platform")
         first = getpass.getpass("Secret value (hidden): ")
         second = getpass.getpass("Repeat secret value: ")
         try:
@@ -96,6 +118,16 @@ class SecretStore:
             first = second = ""
 
     def _read(self, name: str) -> str:
+        self._service(name)
+        if self.is_native:
+            try:
+                return self._native_read(name)
+            except SecretError:
+                if self.vault is None:
+                    raise
+        return self.vault.get(name)
+
+    def _native_read(self, name: str) -> str:
         service = self._service(name)
         if self.system == "Darwin":
             cmd = ["security", "find-generic-password", "-s", service, "-a", "guardkit", "-w"]
@@ -113,6 +145,21 @@ class SecretStore:
             raise SecretError("Native secret store operation failed") from None
 
     def delete(self, name: str) -> None:
+        self._service(name)
+        removed = False
+        if self.vault is not None:
+            removed = self.vault.delete(name)
+        if self.is_native:
+            try:
+                self._native_delete(name)
+                return
+            except SecretError:
+                if not removed:
+                    raise
+        elif not removed:
+            raise SecretError("Secret not found or removal failed")
+
+    def _native_delete(self, name: str) -> None:
         service = self._service(name)
         cmd = (["security", "delete-generic-password", "-s", service, "-a", "guardkit"]
                if self.system == "Darwin" else
@@ -297,6 +344,7 @@ def secrets_main(args: list[str]) -> int:
     entry.add_argument("name")
     entry.add_argument("--kind", choices=("token", "login"), default="token")
     entry.add_argument("--service", help="Service label displayed to the user (no credential data)")
+    sub.add_parser("status", help="Show which secret backends are available and the names held in the file vault")
     attach = sub.add_parser("attach", help="Join a pending masked input form from your own terminal")
     attach.add_argument("socket")
     delete = sub.add_parser("delete"); delete.add_argument("name")
@@ -305,6 +353,16 @@ def secrets_main(args: list[str]) -> int:
     serve = sub.add_parser("serve"); serve.add_argument("name"); serve.add_argument("url")
     serve.add_argument("--method", default="GET"); serve.add_argument("--ttl", type=int, default=60)
     ns = parser.parse_args(args)
+    if ns.command == "status":
+        try:
+            store = SecretStore()
+            print(json.dumps({"native_tool": store.is_native,
+                              "vault_path": str(store.vault.path) if store.vault else None,
+                              "vault_names": store.vault.names() if store.vault else []}))
+            return 0
+        except SecretError as error:
+            print(json.dumps({"error": str(error)}), file=sys.stderr)
+            return 2
     if ns.command == "attach":
         from .safe_input import attach
         return attach(ns.socket)

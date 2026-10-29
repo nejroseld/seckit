@@ -140,7 +140,8 @@ def request_bridged(name: str, kind: str = "token", service: str | None = None, 
         master, slave = pty.openpty()
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
         env = {k: v for k, v in os.environ.items()
-               if k in {"PATH", "HOME", "LANG", "LC_ALL", "DBUS_SESSION_BUS_ADDRESS", "XDG_RUNTIME_DIR"}}
+               if k in {"PATH", "HOME", "LANG", "LC_ALL", "DBUS_SESSION_BUS_ADDRESS", "XDG_RUNTIME_DIR",
+                                "XDG_CONFIG_HOME", "GUARDKIT_HOME"}}
         env["TERM"] = "xterm-256color"
         process = subprocess.Popen(_worker_command(name, kind, service), stdin=slave, stdout=slave, stderr=slave,
                                    env=env, start_new_session=True)
@@ -328,6 +329,26 @@ def _interact(screen, name: str, kind: str, service: str, curses) -> int:
         curses.flushinp()
         screen.erase()
         screen.refresh()
+
+
+def store_main(args: list[str]) -> int:
+    """Store one credential read from stdin for a trusted pane; fixed exit codes only."""
+    try:
+        name, kind = args
+        _validate(name, kind, name)
+        value = sys.stdin.read()
+        if kind == "login":
+            fields = json.loads(value)
+            if not isinstance(fields, dict) or not fields.get("username") or not fields.get("password"):
+                return 5
+        elif not value:
+            return 5
+        put_from_tui(SecretStore(), name, value)
+        return 0
+    except (OSError, ValueError, SecretError):
+        return 5
+    finally:
+        value = ""
 
 
 def worker_main(args: list[str]) -> int:

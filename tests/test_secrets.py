@@ -1,3 +1,4 @@
+import _isolate  # noqa: F401
 import unittest
 import io
 import json

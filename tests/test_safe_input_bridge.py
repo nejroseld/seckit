@@ -1,4 +1,5 @@
 """Bridged form: CLI without a terminal, user joins from a separate pty."""
+import _isolate  # noqa: F401
 import json
 import os
 from pathlib import Path
@@ -68,3 +69,14 @@ class SafeInputBridgeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StoreMainTests(unittest.TestCase):
+    def test_rejects_bad_login_and_name_without_echo(self):
+        source = str(Path(__file__).resolve().parents[1])
+        code = ("import sys; sys.path.insert(0, " + repr(source) + "); from guardkit.safe_input import store_main; "
+                "raise SystemExit(store_main(sys.argv[1:]))")
+        for args, data in ((["ok-name", "login"], '{"username": "u"}'), (["bad name!", "token"], "x"), (["ok-name", "token"], "")):
+            done = subprocess.run([sys.executable, "-I", "-c", code, *args], input=data, capture_output=True, text=True)
+            self.assertEqual(done.returncode, 5)
+            self.assertEqual(done.stdout + done.stderr, "")

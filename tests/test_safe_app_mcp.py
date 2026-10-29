@@ -1,4 +1,5 @@
 """MCP capability negotiation and private encrypted enrollment routing."""
+import _isolate  # noqa: F401
 import base64
 import io
 import json

@@ -101,10 +101,7 @@ def put_from_tui(store: SecretStore, name: str, value: str) -> None:
         raise SecretError("Secret must be valid UTF-8 text") from None
     if not encoded or len(encoded) > _MAX_SECRET_BYTES:
         raise SecretError("Secret exceeds 64 KiB")
-    if store.system == "Linux":
-        store.put(name, value)
-        return
-    if store.system == "Darwin":
+    if store.system == "Darwin" and store.is_native:
         _put_darwin(service, encoded)
         return
-    raise SecretError("No supported native secret store on this platform")
+    store.put(name, value)

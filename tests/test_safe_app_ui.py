@@ -4,6 +4,7 @@ Run with GUARDKIT_LIVE_APP_UI=1 python -m unittest tests.test_safe_app_ui.
 Requires Playwright Python and its Chromium browser; no external network is used.
 """
 from __future__ import annotations
+import _isolate  # noqa: F401
 
 import http.server
 import os

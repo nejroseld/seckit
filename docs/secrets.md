@@ -28,6 +28,16 @@ Ctrl+C cancels. Input is bounded to five minutes. The tool result contains only
 status, `credential_ref`, and `kind`; an unavailable terminal may also include
 the fixed `terminal_unavailable` error code. It never contains entered values.
 
+If the OS secret store is unavailable or rejects the write (no Secret Service
+running, a headless SSH session, an unsupported platform), Guardkit falls back to
+an encrypted file vault: `~/.config/guardkit/vault.json` (AES-256-GCM, each entry
+bound to its name) with a random key in `vault.key`, both mode 0600
+(`GUARDKIT_HOME` or `XDG_CONFIG_HOME` relocate them). No password or setup is
+needed. This protects against accidental leaks through git, backups and logs, not
+against other code running as the same user, the same trust level as an SSH key
+file. A later successful native write replaces the vault entry.
+`guardkit secrets status` shows which backend is available and the vault's names.
+
 The form stores directly in the OS secret store: Linux Secret Service via
 `secret-tool`, and macOS Keychain via Security.framework, without placing the
 value in command arguments. A login is stored as one opaque JSON record with

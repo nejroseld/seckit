@@ -1,4 +1,5 @@
 """Full CLI/worker/TTY boundary using a disposable synthetic native-store stub."""
+import _isolate  # noqa: F401
 import importlib.util
 import json
 import os

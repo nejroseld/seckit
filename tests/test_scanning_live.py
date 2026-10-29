@@ -1,4 +1,5 @@
 """Opt-in real Semgrep regressions; Trivy is stubbed, no downloads are needed."""
+import _isolate  # noqa: F401
 import contextlib
 import io
 import os

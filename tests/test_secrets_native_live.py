@@ -1,4 +1,5 @@
 """Opt-in macOS adapter check against a disposable native Keychain only."""
+import _isolate  # noqa: F401
 import os
 from pathlib import Path
 import subprocess

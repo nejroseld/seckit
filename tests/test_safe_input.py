@@ -1,4 +1,5 @@
 """Security and interaction tests for the agent-triggered local input TUI."""
+import _isolate  # noqa: F401
 import errno
 import json
 import os

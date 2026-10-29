@@ -1,3 +1,4 @@
+import _isolate  # noqa: F401
 import json
 import contextlib
 import io

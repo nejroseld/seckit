@@ -1,3 +1,4 @@
+import _isolate  # noqa: F401
 import contextlib
 import hashlib
 import io

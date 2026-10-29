@@ -1,4 +1,5 @@
 """Agent/CLI boundaries expose enrollment metadata, never credential fields."""
+import _isolate  # noqa: F401
 import io
 import json
 import tempfile
