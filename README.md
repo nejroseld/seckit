@@ -1,28 +1,69 @@
 # Guardkit
 
-Local Trivy and Semgrep security checks, reviewed fixes, and native credential-store access for developer projects.
+Русский · [English](README.en.md)
 
-## Install
+Локальная проверка безопасности проекта: код, зависимости, конфигурация и случайно оставленные секреты. Guardkit запускает Trivy и Semgrep, собирает находки по приоритету и предлагает изменения для проверки человеком.
 
-From this checkout:
+## Agent Ctrl+C
 
-```bash
-python3 -m guardkit init
+Скопируйте текст ниже и отправьте своему coding-агенту — он установит Guardkit и проверит текущий проект.
+
+```text
+Установи Guardkit из https://github.com/nejroseld/guardkit для моего текущего проекта. Выполни установку сам, а не только опиши команды.
+
+1. Определи корень текущего проекта и найди Python 3.10–3.14, совместимый с текущими сканерами. Клонируй Guardkit в отдельный каталог вне проверяемого проекта и создай для него отдельное виртуальное окружение. Не меняй зависимости проекта или системный Python.
+2. Установи клонированный Guardkit Python-интерпретатором этого окружения через `python -I -m pip install <каталог Guardkit>`. Репозиторий пока приватный: используй уже настроенный доступ GitHub. Если доступа нет, сообщи, что нужен вход в GitHub; не запрашивай токены в чате.
+3. Исполняемым файлом Guardkit из этого окружения выполни `guardkit init --root <корень проекта>`, затем `guardkit doctor --root <корень проекта> --json` и `guardkit scan --root <корень проекта> --json`. Существующие инструкции агентов сохраняй. Не применяй исправления и не запускай код или тесты проверяемого проекта без отдельного запроса.
+4. Учитывай коды завершения scan: 0 — завершено без находок, 1 — найдены проблемы, 2 — проверка неполная. Не называй неполную проверку успешной. Не выводи значения секретов.
+5. В конце укажи, куда установлен Guardkit, какой коммит установлен, результаты doctor и scan и точную команду для следующей проверки проекта.
 ```
 
-## Features
+Работает с агентом, у которого есть терминал и доступ к GitHub. Для первой установки нужен интернет: сканеры и базы загружаются автоматически.
 
-- Automatic stack detection and verified scanner installation.
-- Prioritized findings in terminal or JSON.
-- Approved project fixes and local Codex, Claude Code, and Cursor instructions.
-- Native secret storage and scoped HTTP requests; [isolation limitations](docs/secrets.md).
+## Установка вручную
 
-## Usage
+Клонируйте Guardkit отдельно от проекта, который хотите проверить. Команды для Linux, macOS и WSL:
 
 ```bash
-python3 -m guardkit scan
+git clone https://github.com/nejroseld/guardkit.git
+cd guardkit
+python3 -m venv .venv
+.venv/bin/python -I -m pip install .
+.venv/bin/guardkit init --root "/путь/к/проекту"
+.venv/bin/guardkit scan --root "/путь/к/проекту"
 ```
 
-## Requirements
+Пока репозиторий приватный, для клонирования нужен настроенный доступ GitHub. Пакет не опубликован в PyPI. В Windows пути к исполняемым файлам окружения находятся в `.venv\Scripts`; доступность сканеров зависит от платформы, для работы подходит WSL.
 
-Python 3.10+ and internet for initial scanner/database downloads. Linux and macOS; Windows support depends on scanner wheels, with WSL preferred. See [setup](docs/setup.md) and [validation status](docs/validation.md).
+## Что проверяет
+
+- **Код:** опасные конструкции и потоки данных в Python, JavaScript и TypeScript по локальным правилам Semgrep.
+- **Зависимости, конфигурацию и секреты:** известные уязвимости пакетов, ошибки настройки и возможные утечки через Trivy.
+- **Исправления:** показывает предлагаемые изменения и применяет их после подтверждения. Добавляет локальные инструкции для Codex, Claude Code и Cursor, сохраняя существующие файлы.
+
+## Основные команды
+
+Используйте установленный исполняемый файл Guardkit; если он добавлен в PATH, достаточно `guardkit`.
+
+```bash
+guardkit doctor --root "/путь/к/проекту" --json
+guardkit scan --root "/путь/к/проекту" --json
+guardkit fix --root "/путь/к/проекту" --check
+guardkit fix --root "/путь/к/проекту" --skip-tests
+```
+
+`fix --check` показывает план изменений. `fix --skip-tests` запрашивает подтверждение, применяет показанный план и повторяет сканирование. Значения секретов не нужно передавать агенту или вставлять в чат.
+
+## Документация и ограничения
+
+- [Установка и эксплуатация](docs/setup.md).
+- [Интеграция с агентами и MCP](docs/agents.md).
+- [Сканеры и правила](docs/scanners.md).
+- [Хранилище секретов и границы изоляции](docs/secrets.md).
+- [Результаты проверок](docs/validation.md) и [аудит безопасности](docs/security-audit.md), включая оставшиеся предупреждения в зависимостях Semgrep.
+
+Нужен Python 3.10+. Сканирование не гарантирует отсутствие всех уязвимостей. Брокер секретов использует системное хранилище, но не изолирует его от произвольного кода с правами того же пользователя.
+
+## Лицензия
+
+[MIT](LICENSE).
