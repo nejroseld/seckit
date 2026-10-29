@@ -18,13 +18,15 @@ Guardkit finds vulnerabilities. Your agent reviews the findings and fixes the co
 
 ## What it does
 
-- 🧩 **Code**: dangerous patterns in Python, JS, TS (Semgrep)
-- 📦 **Dependencies**: known CVEs in packages (Trivy)
-- ⚙️ **Config**: Dockerfile, Kubernetes, Terraform (Trivy)
-- 🔑 **Leaked secrets**: keys and tokens in project files, values never printed
-- 🔐 **Secret storage**: tokens and logins live in Keychain (macOS) or Secret Service (Linux)
-- 🙈 **Input outside the chat**: the agent asks for a token, you type it into a masked form, the agent gets only a reference
-- ✅ **Requests with a token**: an HTTP request with a token goes out only after you approve it; the agent gets only the response status
+| What | How |
+|---|---|
+| 🧩 **Code** | finds dangerous patterns in Python, JS, TS (Semgrep) |
+| 📦 **Dependencies** | finds known CVEs in packages (Trivy) |
+| ⚙️ **Config** | checks Dockerfile, Kubernetes, Terraform (Trivy) |
+| 🔑 **Leaked secrets** | finds keys and tokens in project files without printing values |
+| 🔐 **Secret storage** | stores tokens and logins in Keychain (macOS) or Secret Service (Linux) |
+| 🙈 **Input outside the chat** | opens a masked form: you type the token, the agent gets only a reference |
+| ✅ **Requests with a token** | sends an HTTP request with a token only after you approve it and returns only the response status to the agent |
 
 ## Install
 
