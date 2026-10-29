@@ -1,24 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="150" viewBox="0 0 900 150" role="img" aria-label="init, scan, fix">
-  <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748b"/></marker>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="200" viewBox="0 0 1000 200" role="img" aria-label="agent, scan, triage, review, rescan">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748b"/></marker></defs>
   <g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" text-anchor="middle">
-    <g transform="translate(20 20)">
-      <rect width="240" height="110" rx="16" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-opacity="0.6" stroke-width="2"/>
-      <text x="120" y="48" font-size="24" font-weight="700" fill="#10b981">init</text>
-      <text x="120" y="80" font-size="15" fill="#64748b">installs scanners</text>
-    </g>
-    <g transform="translate(330 20)">
-      <rect width="240" height="110" rx="16" fill="#0ea5e9" fill-opacity="0.12" stroke="#0ea5e9" stroke-opacity="0.6" stroke-width="2"/>
-      <text x="120" y="48" font-size="24" font-weight="700" fill="#0ea5e9">scan</text>
-      <text x="120" y="80" font-size="15" fill="#64748b">prioritized findings</text>
-    </g>
-    <g transform="translate(640 20)">
-      <rect width="240" height="110" rx="16" fill="#a855f7" fill-opacity="0.12" stroke="#a855f7" stroke-opacity="0.6" stroke-width="2"/>
-      <text x="120" y="48" font-size="24" font-weight="700" fill="#a855f7">fix</text>
-      <text x="120" y="80" font-size="15" fill="#64748b">diff → you approve</text>
-    </g>
-    <path d="M268 75H318" stroke="#64748b" stroke-width="2.5" marker-end="url(#a)"/>
-    <path d="M578 75H628" stroke="#64748b" stroke-width="2.5" marker-end="url(#a)"/>
+    <g transform="translate(10 20)"><rect width="168" height="100" rx="14" fill="#a855f7" fill-opacity="0.12" stroke="#a855f7" stroke-opacity="0.6" stroke-width="2"/><text x="84" y="44" font-size="21" font-weight="700" fill="#a855f7">agent</text><text x="84" y="74" font-size="13" fill="#64748b">user task</text></g>
+    <path d="M182 70H204" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+    <g transform="translate(208 20)"><rect width="168" height="100" rx="14" fill="#0ea5e9" fill-opacity="0.12" stroke="#0ea5e9" stroke-opacity="0.6" stroke-width="2"/><text x="84" y="44" font-size="21" font-weight="700" fill="#0ea5e9">scan</text><text x="84" y="74" font-size="13" fill="#64748b">facts, not verdicts</text></g>
+    <path d="M380 70H402" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+    <g transform="translate(406 20)"><rect width="168" height="100" rx="14" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-opacity="0.6" stroke-width="2"/><text x="84" y="44" font-size="21" font-weight="700" fill="#10b981">triage</text><text x="84" y="74" font-size="13" fill="#64748b">agent, in context</text></g>
+    <path d="M578 70H600" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+    <g transform="translate(604 20)"><rect width="168" height="100" rx="14" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-opacity="0.6" stroke-width="2"/><text x="84" y="44" font-size="21" font-weight="700" fill="#f59e0b">review_id</text><text x="84" y="74" font-size="13" fill="#64748b">exact plan + diff</text></g>
+    <path d="M776 70H798" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+    <g transform="translate(802 20)"><rect width="168" height="100" rx="14" fill="#0ea5e9" fill-opacity="0.12" stroke="#0ea5e9" stroke-opacity="0.6" stroke-width="2"/><text x="84" y="44" font-size="21" font-weight="700" fill="#0ea5e9">rescan</text><text x="84" y="74" font-size="13" fill="#64748b">verify the result</text></g>
+    <path d="M902 124V160H94V128" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#a)"/>
+    <text x="500" y="184" font-size="13" fill="#64748b">new findings — next round</text>
   </g>
 </svg>

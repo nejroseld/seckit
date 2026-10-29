@@ -1,9 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="guardkit — local security scan for code, dependencies, config and secrets">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="guardkit — local security toolkit for coding agents">
   <rect width="1200" height="300" rx="12" fill="#121212"/>
   <g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace">
-    <text x="80" y="92" font-size="20" fill="#6b6b6b">$ guardkit scan</text>
+    <text x="80" y="92" font-size="20" fill="#6b6b6b">$ agent + guardkit</text>
     <text x="76" y="184" font-size="96" font-weight="700" fill="#ededed" textLength="440" lengthAdjust="spacingAndGlyphs">guardkit</text>
     <rect x="528" y="116" width="44" height="72" fill="#ff5a36"/>
-    <text x="80" y="238" font-size="22" fill="#9a9a9a">local security scan: code, dependencies, config, secrets</text>
+    <text x="80" y="238" font-size="22" fill="#9a9a9a">the security toolkit your coding agent works with</text>
+    <g font-size="16" fill="#9a9a9a">
+      <g transform="translate(760 70)"><rect width="360" height="44" rx="8" fill="none" stroke="#333"/><text x="18" y="28">scan<tspan fill="#6b6b6b">  · evidence, exit codes</tspan></text></g>
+      <g transform="translate(760 126)"><rect width="360" height="44" rx="8" fill="none" stroke="#333"/><text x="18" y="28">review_id<tspan fill="#6b6b6b">  · exact plan only</tspan></text></g>
+      <g transform="translate(760 182)"><rect width="360" height="44" rx="8" fill="none" stroke="#333"/><text x="18" y="28">safe input<tspan fill="#6b6b6b">  · secret never in chat</tspan></text></g>
+    </g>
+    <rect x="740" y="70" width="4" height="156" fill="#ff5a36"/>
   </g>
 </svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="190" viewBox="0 0 1000 190" role="img" aria-label="safe input">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748b"/></marker></defs>
+  <g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" text-anchor="middle">
+    <g transform="translate(10 20)"><rect width="270" height="100" rx="14" fill="#a855f7" fill-opacity="0.12" stroke="#a855f7" stroke-opacity="0.6" stroke-width="2"/><text x="135" y="44" font-size="21" font-weight="700" fill="#a855f7">agent</text><text x="135" y="74" font-size="13" fill="#64748b">sees only: status + reference</text></g>
+    <g transform="translate(365 20)"><rect width="270" height="100" rx="14" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-opacity="0.6" stroke-width="2"/><text x="135" y="44" font-size="21" font-weight="700" fill="#f59e0b">form / TUI</text><text x="135" y="74" font-size="13" fill="#64748b">you enter the token</text></g>
+    <g transform="translate(720 20)"><rect width="270" height="100" rx="14" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-opacity="0.6" stroke-width="2"/><text x="135" y="44" font-size="21" font-weight="700" fill="#10b981">OS keystore</text><text x="135" y="74" font-size="13" fill="#64748b">the value lives here</text></g>
+    <path d="M365 70H284" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+    <path d="M635 70H716" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+    <text x="500" y="160" font-size="14" fill="#64748b">never in chat</text>
+  </g>
+</svg>
