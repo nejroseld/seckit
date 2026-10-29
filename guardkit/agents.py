@@ -28,7 +28,7 @@ GuardKit is an always-on security assistant for this repository. During code cha
 
 Run `{command} scan --root {shlex.quote(str(root))} --json` to inspect the repository. Review all findings and scanner errors; incomplete checks are not clean. Run `{command} fix --root {shlex.quote(str(root))} --json` to generate sanitized proposed diffs and a review_id. Explain and show each diff. Apply the exact review_id with `{command} fix --root {shlex.quote(str(root))} --apply REVIEW_ID` when the current task already authorizes the remediation; do not ask for a redundant approval prompt. Implement appropriate manual remediation for findings without safe proposals when the user's task already authorizes those code changes. Rescan and report remaining findings and incomplete checks.
 
-For credentials, call MCP `open_safe_input` with a non-secret name, kind `token` or `login`, and a service label. In MCP Apps clients this opens an encrypted private form; use `safe_input_status` with its request_id to check completion. Never invoke app-only submit tools on the user's behalf. In terminal-only clients it opens the masked TUI; or run `{command} secrets input NAME --kind token --service SERVICE`. The user enters data in a dedicated masked TUI on their own terminal. Only status and an opaque credential reference return to you. Never ask for values in chat or tool arguments, retrieve them from the keystore, or capture terminal input. If the TUI is unavailable, ask the user to run that command in their own terminal; never fall back to tool stdin. Login records enroll credentials only; they do not automatically sign into websites.
+For credentials, call MCP `open_safe_input` with a non-secret name, kind `token` or `login`, and a service label. In MCP Apps clients this opens an encrypted private form; use `safe_input_status` with its request_id to check completion. Never invoke app-only submit tools on the user's behalf. In Claude Code, the installed guardkit-input panel provides `mcp__guardkit-input__open_safe_input` and `mcp__guardkit-input__safe_input_status` (same arguments; the form is a masked pane, and the call returns at once with awaiting_user). In terminal-only clients it opens the masked TUI; or run `{command} secrets input NAME --kind token --service SERVICE`. The user enters data in a dedicated masked TUI on their own terminal. Only status and an opaque credential reference return to you. Never ask for values in chat or tool arguments, retrieve them from the keystore, or capture terminal input. If the TUI is unavailable, ask the user to run that command in their own terminal; never fall back to tool stdin. Login records enroll credentials only; they do not automatically sign into websites.
 
 For MCP, call `propose_safe_fixes`, show its sanitized diffs, then call `apply_safe_fixes` with that review_id only when the user's current task authorizes the displayed changes. Never execute repository scripts, tests, builds, or other project code as verification unless the user explicitly requested it.
 {_BLOCK_END}"""
@@ -110,6 +110,23 @@ def _replace_managed(existing: str, block: str) -> str:
     return existing + sep + "\n" + block + "\n"
 
 
+_MOD_DIR = ".claude/skills/guardkit-input/"
+_MOD_FILES = (("plugin.json", ".claude-plugin/plugin.json"), ("hooks.json", "hooks/hooks.json"),
+              ("register.tsx", "hooks/register.tsx"), ("index.d.ts", "types/index.d.ts"))
+
+
+def _mod_targets() -> tuple[tuple[str, str], ...]:
+    """Claude Code panel mod for private credential entry, bound to this installation."""
+    source = Path(__file__).resolve().parent
+    out = []
+    for name, relative in _MOD_FILES:
+        text = (source / "claude_mod" / name).read_text(encoding="utf-8")
+        text = text.replace("'__GUARDKIT_PYTHON__'", json.dumps(sys.executable))
+        text = text.replace("'__GUARDKIT_SOURCE__'", json.dumps(str(source.parent)))
+        out.append((_MOD_DIR + relative, text))
+    return tuple(out)
+
+
 def install(root: Path) -> list[str]:
     """Install or update additive project-local agent guidance."""
     root = Path(root).resolve()
@@ -119,7 +136,7 @@ def install(root: Path) -> list[str]:
     targets = (("AGENTS.md", managed + "\n"), ("CLAUDE.md", managed + "\n"),
                (".cursor/rules/guardkit.mdc", _cursor_content(root)),
                (".agents/skills/guardkit/SKILL.md", _skill(root)),
-               (".claude/skills/guardkit/SKILL.md", _skill(root)))
+               (".claude/skills/guardkit/SKILL.md", _skill(root))) + _mod_targets()
     changed: list[str] = []
     legacy = _legacy_contents()
     for relative, content in targets:
@@ -153,7 +170,9 @@ def install(root: Path) -> list[str]:
             finally:
                 if fd >= 0:
                     os.close(fd)
-            if before in legacy:
+            if relative.startswith(_MOD_DIR):
+                updated = content
+            elif before in legacy:
                 updated = content
             elif relative.endswith("guardkit.mdc"):
                 updated = _cursor_update(before, root)

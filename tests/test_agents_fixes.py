@@ -18,7 +18,7 @@ class AgentInstallTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             created = agents.install(root)
-            self.assertEqual(len(created), 5)
+            self.assertEqual(len(created), 9)
             self.assertTrue((root / "AGENTS.md").is_file())
             self.assertTrue((root / "CLAUDE.md").is_file())
             self.assertTrue((root / ".agents/skills/guardkit/SKILL.md").is_file())

@@ -1,0 +1,1 @@
+{ "name": "guardkit-input", "version": "0.1.0", "description": "Masked credential entry pane for Guardkit: values go to the OS keystore, never to the chat.", "types": "./types/index.d.ts" }

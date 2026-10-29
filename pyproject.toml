@@ -17,4 +17,4 @@ guardkit = "guardkit.cli:main"
 include = ["guardkit*"]
 
 [tool.setuptools.package-data]
-guardkit = ["rules/*.yml", "ui/*.html"]
+guardkit = ["rules/*.yml", "ui/*.html", "claude_mod/*"]

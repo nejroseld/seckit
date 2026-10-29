@@ -28,6 +28,18 @@ Ctrl+C cancels. Input is bounded to five minutes. The tool result contains only
 status, `credential_ref`, and `kind`; an unavailable terminal may also include
 the fixed `terminal_unavailable` error code. It never contains entered values.
 
+## Claude Code panel
+
+`guardkit init` also writes a Claude Code mod to `.claude/skills/guardkit-input/`
+(source: `guardkit/claude_mod/`, bound to the Python and Guardkit paths of the
+installation that ran `init`). Claude Code loads it from the project's skills
+folder and asks once before enabling mods. It adds the `/safe-input NAME
+[token|login] [SERVICE]` command and the tools `open_safe_input` and
+`safe_input_status`: the user types into a masked pane, the value goes through
+stdin to `store_main` and then to the native store or the file vault, and the
+agent only sees a status and the credential reference. Re-running `init`
+refreshes these files; do not edit them by hand. Remove the folder to uninstall.
+
 If the OS secret store is unavailable or rejects the write (no Secret Service
 running, a headless SSH session, an unsupported platform), Guardkit falls back to
 an encrypted file vault: `~/.config/guardkit/vault.json` (AES-256-GCM, each entry
