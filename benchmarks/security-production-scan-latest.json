@@ -2,8 +2,8 @@
   "findings": [],
   "errors": [],
   "audit_scope": [
-    "guardkit/",
-    ".github/",
+    "guardkit",
+    ".github",
     "pyproject.toml",
     "README.md",
     "LICENSE",
@@ -15,7 +15,7 @@
     "build/",
     "dist/"
   ],
-  "checked_at_utc": "2026-10-29T09:25:16.117855+00:00",
+  "checked_at_utc": "2026-10-29T09:39:26.988774+00:00",
   "trivy_database": {
     "Version": 2,
     "NextUpdate": "2026-10-30T07:17:11.934066735Z",

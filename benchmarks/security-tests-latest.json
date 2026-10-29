@@ -1,15 +1,13 @@
 {
-  "checked_at_utc": "2026-10-29T09:27:12.468828+00:00",
+  "checked_at_utc": "2026-10-29T09:38:23.995850+00:00",
   "command": "GUARDKIT_LIVE_SCANNERS=1 GUARDKIT_LIVE_CODEX=1 python3 -m unittest discover -s tests -v",
-  "tests_run": 57,
-  "failures": 0,
-  "errors": 0,
-  "skipped": 0,
-  "duration_seconds": 63.283,
-  "live_checks": [
-    "Codex MCP scan/findings/propose_safe_fixes",
-    "PTY approval and real scanner fix verification",
-    "Semgrep suppression resistance and terminal controls",
-    "loopback HTTPS reflection/redirect/revoke/expiry"
-  ]
+  "tests_run": 60,
+  "returncode": 0,
+  "duration_seconds": 61.147,
+  "skipped": [
+    "'requires macOS and GUARDKIT_LIVE_NATIVE_STORE=1'"
+  ],
+  "pip_version": "26.2.2",
+  "native_linux_store": "passed separately in isolated temporary Secret Service",
+  "native_macos_keychain": "covered separately by hosted macOS CI"
 }

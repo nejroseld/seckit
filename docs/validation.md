@@ -4,8 +4,9 @@ For the subsequent security review, fixes, and their verification, see the
 [security audit](security-audit.md). The results below describe the earlier run.
 
 Verified on Linux x64, Python 3.14.6, on 2026-10-29. The package is built locally;
-it has not been published to PyPI/npm. macOS and Windows are implementation
-and CI targets, not locally verified platforms.
+it has not been published to PyPI/npm. Subsequent native macOS and Windows
+Python 3.12 package checks passed in
+[private hosted CI](https://github.com/nejroseld/guardkit/actions/runs/40851239433).
 
 ## Observed results
 
@@ -75,11 +76,14 @@ vulnerable fixtures and synthetic credentials must never be deployed.
 
 ## Remaining boundaries
 
-Live native-keychain enrollment was not tested: this headless environment has
-`secret-tool` but no desktop Secret Service. Claude Code/Cursor integration files
-and MCP protocol are tested, while those applications were not launched here.
-The GitHub workflow covers package tests on three operating systems and Linux
-real-engine acceptance; those hosted jobs have not run in this workspace.
+The extended review verified real Linux Secret Service put/read/delete in an
+isolated temporary session, and native macOS Keychain read/delete in a disposable
+keychain on a hosted runner. Interactive macOS enrollment still requires a
+person at the native prompt and was not automated. The GitHub workflow passed
+on Linux, macOS, and Windows, including Linux real-engine acceptance. See the
+[current test and platform evidence](security-audit.md) for scope and remaining
+upstream dependency advisories. Claude Code/Cursor client execution is recorded
+separately from the authenticated Codex smoke test.
 
 The broker does **not** isolate credentials from arbitrary code running as the
 same OS user. That code can invoke the store or inspect the process. Supported

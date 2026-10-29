@@ -35,7 +35,7 @@ carriage-return characters, through real Semgrep, normalization, and CLI output.
 The impact is terminal output manipulation; command execution was not demonstrated.
 The regression also covers bidirectional formatting controls and JSON round trips.
 
-## Verification
+## Initial restricted verification
 
 - `python3 -m unittest discover -s tests -v`: 54 tests, no failures, four skips.
   Skips cover opt-in Codex/scanner tests and unavailable loopback HTTPS binding.
@@ -47,9 +47,10 @@ The regression also covers bidirectional formatting controls and JSON round trip
 
 ## Extended verification after sandbox restrictions were lifted
 
-- The full opt-in Linux run completed **57 tests with no failures or skips**
-  in 63.283 seconds, including the authenticated Codex MCP session, real scanner
-  PTY approval, and all loopback HTTPS checks. See
+- The final opt-in Linux run completed **60 tests with no failures and one
+  macOS-only skip**, including the authenticated Codex MCP session, real scanner
+  PTY approval, and all loopback HTTPS checks. The skipped native Keychain test
+  runs separately on the hosted macOS runner. See
   [test evidence](../benchmarks/security-tests-latest.json).
 - Real-engine acceptance passed: all four finding categories were present,
   one approved finding disappeared on rescan, and unrelated edits were preserved.
@@ -80,9 +81,21 @@ The regression also covers bidirectional formatting controls and JSON round trip
 
 This is a source review with targeted reproductions, not an exhaustive proof of
 security. Native Linux, macOS, and Windows CI checks have run in the private
-[GitHub repository](https://github.com/nejroseld/guardkit). A disposable Linux
+[GitHub repository](https://github.com/nejroseld/guardkit). The
+[final code workflow](https://github.com/nejroseld/guardkit/actions/runs/40851239433)
+passed all four jobs, including the platform matrix, real scanner acceptance,
+and native macOS Keychain check. See [CI evidence](../benchmarks/security-ci-latest.json).
+A disposable Linux
 Secret Service passed the real store/write/read/delete round trip; a separate
 macOS CI test passed native Keychain reads and deletion using a synthetic fixture.
+Cursor Agent CLI also approved the temporary Guardkit MCP server and enumerated
+all three tools using isolated temporary HOME/workspace settings; this verifies
+client discovery, not a model-driven session. See
+[Cursor evidence](../benchmarks/security-cursor-client-latest.json).
+Claude Code was launched against a read-only synthetic fixture but stopped before
+any tool calls because its OAuth session had expired and could not be refreshed.
+The fixture was unchanged; a successful Claude session requires renewed user
+authentication. See [Claude evidence](../benchmarks/security-claude-client-latest.json).
 Interactive macOS enrollment still requires a person at the native prompt and
 was not automated. The standalone Trivy binary was not audited through a complete
 upstream SBOM. These checks do not establish that every upstream dependency

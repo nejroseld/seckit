@@ -1,0 +1,26 @@
+{
+  "client": "Claude Code",
+  "client_path": "/home/ai/.local/bin/claude",
+  "mode": "documented headless print mode + stdio MCP",
+  "fixture_only": true,
+  "project_code_executed": false,
+  "credential_files_or_values_inspected": false,
+  "tools_called": [],
+  "status": "client_failed_or_auth_unavailable",
+  "client_exit_code": 1,
+  "safe_stderr": "",
+  "safe_error_summaries": [
+    "Failed to authenticate: OAuth session expired and could not be refreshed"
+  ],
+  "timed_out": false,
+  "failure_category": "authentication_unavailable",
+  "fixture_unchanged": true,
+  "fixture_sha256_before": "811ac075dcd83382c843b5660d62f141341db48ee94f484a4412e79b2176cc54",
+  "fixture_sha256_after": "811ac075dcd83382c843b5660d62f141341db48ee94f484a4412e79b2176cc54",
+  "read_only_modes": {
+    "directory": "0o555",
+    "file": "0o444"
+  },
+  "required_calls_observed_in_order": false,
+  "checked_at_utc": "2026-10-29T09:45:58.352558+00:00"
+}

@@ -1,0 +1,22 @@
+{
+  "checked_at_utc": "2026-10-29T09:46:54.510867+00:00",
+  "client": "Cursor Agent CLI",
+  "check": "MCP server approval and tool enumeration in isolated temporary HOME and workspace",
+  "approval_returncode": 0,
+  "returncode": 0,
+  "expected_tools": [
+    "scan",
+    "findings",
+    "propose_safe_fixes"
+  ],
+  "observed_tools": [
+    "scan",
+    "findings",
+    "propose_safe_fixes"
+  ],
+  "status": "passed",
+  "model_session_tested": false,
+  "global_settings_modified": false,
+  "safe_diagnostic": "",
+  "permissions_source": "https://prod.cursor.com/docs/cli/reference/permissions"
+}

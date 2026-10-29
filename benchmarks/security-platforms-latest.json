@@ -31,7 +31,29 @@
     "platform_matrix_covers_ubuntu_macos_windows": true,
     "workflow_file": ".github/workflows/test.yml",
     "dispatch_attempted": true,
-    "trigger": "push to private repository"
+    "trigger": "push to private repository",
+    "run_url": "https://github.com/nejroseld/guardkit/actions/runs/40851239433",
+    "tested_commit": "27294018cf854b3b51cd4d664f18d021d3a0ebcf",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "engines",
+        "conclusion": "success"
+      },
+      {
+        "name": "portable (windows-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "portable (macos-latest, 3.12)",
+        "conclusion": "success"
+      },
+      {
+        "name": "portable (ubuntu-latest, 3.12)",
+        "conclusion": "success"
+      }
+    ]
   },
   "native_secret_store": {
     "secret_tool_installed": true,
@@ -41,12 +63,16 @@
     "disposable_isolated_session_test": "passed: GuardKit SecretStore put/read/delete in a private dbus-run-session and temporary HOME/XDG directories; synthetic value only; removed after read-back",
     "dbus_broker_launch_installed": true,
     "rpm_download_attempt": "Fedora 44 dbus-daemon, dbus-tools, gnome-keyring, gcr3, and gcr3-base RPMs extracted under /tmp; no system installation",
-    "round_trip_status": "passed"
+    "round_trip_status": "passed",
+    "runtime_scope": "Downloaded Fedora RPMs extracted into a temporary prefix; no system package installation or existing user keyring access."
   },
   "windows_macos_execution": {
     "native_host_execution_available": false,
     "wine_available": true,
     "windows_python_runtime_confirmed": false,
-    "macos_vm_or_runner_available": false
+    "macos_vm_or_runner_available": false,
+    "hosted_native_windows": "passed portable Python 3.12 tests",
+    "hosted_native_macos": "passed portable Python 3.12 tests and disposable native Keychain read/delete",
+    "run_url": "https://github.com/nejroseld/guardkit/actions/runs/40851239433"
   }
 }
