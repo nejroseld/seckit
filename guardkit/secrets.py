@@ -293,12 +293,35 @@ def secrets_main(args: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="guardkit-secrets")
     sub = parser.add_subparsers(dest="command", required=True)
     put = sub.add_parser("put"); put.add_argument("name")
+    entry = sub.add_parser("input", help="Open masked credential entry on the user terminal; return metadata only")
+    entry.add_argument("name")
+    entry.add_argument("--kind", choices=("token", "login"), default="token")
+    entry.add_argument("--service", help="Service label displayed to the user (no credential data)")
+    attach = sub.add_parser("attach", help="Join a pending masked input form from your own terminal")
+    attach.add_argument("socket")
     delete = sub.add_parser("delete"); delete.add_argument("name")
     request = sub.add_parser("request"); request.add_argument("name"); request.add_argument("url")
     request.add_argument("--method", default="GET"); request.add_argument("--ttl", type=int, default=60)
     serve = sub.add_parser("serve"); serve.add_argument("name"); serve.add_argument("url")
     serve.add_argument("--method", default="GET"); serve.add_argument("--ttl", type=int, default=60)
     ns = parser.parse_args(args)
+    if ns.command == "attach":
+        from .safe_input import attach
+        return attach(ns.socket)
+    if ns.command == "input":
+        from .safe_input import request as open_input, request_bridged
+        try:
+            result = open_input(ns.name, ns.kind, ns.service)
+            if result.get("error_code") == "terminal_unavailable":
+                def announce(command):
+                    print("No terminal here. Run this in your own terminal to open the form:\n  "
+                          + command, file=sys.stderr, flush=True)
+                result = request_bridged(ns.name, ns.kind, ns.service, announce)
+            print(json.dumps(result))
+            return 0 if result["status"] == "stored" else 130 if result["status"] == "cancelled" else 2
+        except SecretError as error:
+            print(json.dumps({"status": "failed", "error": str(error)}))
+            return 2
     try:
         store = SecretStore()
         if ns.command == "put":

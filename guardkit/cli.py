@@ -1,4 +1,4 @@
-"""Concise command-line interface. No project code is executed during scans."""
+"""Agent-first JSON tools. Project code runs only with explicit --run-tests."""
 from __future__ import annotations
 import argparse
 import json
@@ -10,7 +10,7 @@ import sys
 import time
 from pathlib import Path
 from . import __version__
-from . import agents, fixes, provision
+from . import agents, fixes, provision, reviews
 from .detect import detect
 from .scanning import scan
 
@@ -63,31 +63,36 @@ def _project_tests(root: Path) -> list[str] | None:
     return None
 
 
-def _fix(root: Path, as_json: bool, check: bool, skip_tests: bool = False) -> int:
-    report = _scan(root)
-    plans = fixes.propose(root, report["findings"])
-    if as_json:
-        print(json.dumps({"plans": fixes.public_plans(plans), "errors": report["errors"]}, indent=2))
+def _fix(root: Path, as_json: bool, review_id: str | None = None,
+         run_tests: bool = False) -> int:
+    if review_id is None:
+        report = _scan(root)
+        plans = fixes.propose(root, report["findings"])
+        review_id = reviews.create(root, plans)
+        result = {"schema_version": 1, "plans": fixes.public_plans(plans),
+                  "review_id": review_id, "findings": report["findings"], "errors": report["errors"],
+                  "complete": not bool(report["errors"]),
+                  "next_action": "Review diffs, then apply the review_id within the user's authorized scope."
+                                 if plans else "Agent should review findings for manual remediation."}
+        if as_json:
+            print(json.dumps(result, indent=2))
+        else:
+            for plan in result["plans"]:
+                print(plan["reason"])
+                print(plan["diff"], end="")
+            print("Review only; no project files changed.")
+            if review_id:
+                print("Apply reviewed changes: guardkit fix --root " + shlex.quote(str(root)) + " --apply " + review_id)
+            for error in result["errors"]:
+                print("Incomplete check: " + _terminal_text(error), file=sys.stderr)
         return 2 if report["errors"] else 0
-    if not plans:
-        print("No automatic corrections available. Review scan findings for manual remediation.")
-        return 2 if report["errors"] else 0
-    for plan in fixes.public_plans(plans):
-        print(plan["reason"])
-        print(plan["diff"], end="")
-    if check:
-        print("Review only; no files changed.")
-        return 0
-    if not sys.stdin.isatty():
-        print("Approval requires an interactive terminal. Use --check to review.", file=sys.stderr)
-        return 2
-    tests = None if skip_tests else _project_tests(root)
-    if tests:
-        print("After applying, run project code: " + shlex.join(tests))
-    if input("Apply these changes and run the displayed checks? [y/N] ").strip().lower() != "y":
-        print("No changes applied.")
-        return 0
-    applied = fixes.apply(root, plans)
+
+    plans = reviews.consume(root, review_id)
+    try:
+        applied = fixes.apply(root, plans)
+    except (OSError, ValueError) as exc:
+        raise reviews.ReviewError("Reviewed changes could not be applied; files may have changed. Request and review a new proposal.") from exc
+    tests = _project_tests(root) if run_tests else None
     test_status = "not_run"
     if tests:
         try:
@@ -97,17 +102,17 @@ def _fix(root: Path, as_json: bool, check: bool, skip_tests: bool = False) -> in
             test_status = "passed" if process.returncode == 0 else "failed"
         except (OSError, subprocess.TimeoutExpired):
             test_status = "failed"
-    verified = _scan(root)
+    try:
+        verified = _scan(root)
+    except (provision.ProvisionError, OSError, ValueError):
+        verified = {"findings": [], "errors": ["Post-apply scan failed; changes were applied but verification is incomplete."]}
     verified["project_tests"] = {"command": tests, "status": test_status}
     remaining_ids = {f["id"] for f in verified["findings"]}
     expected = {fid for p in applied for fid in p["finding_ids"]}
     resolved = expected - remaining_ids if not verified["errors"] else set()
+    verified["applied_count"] = len(applied)
     verified["fix_verification"] = {"resolved_ids": sorted(resolved), "status": "incomplete" if verified["errors"] else "rescanned"}
-    print(f"Applied {len(applied)} change(s); {len(resolved)} finding(s) no longer reported.")
-    if any(p["path"] == ".gitignore" for p in applied):
-        print("Ignore rules protect future additions. Existing secrets still require revocation and removal from history.")
-    print("Project tests: " + test_status + ".")
-    status = _show(verified)
+    status = _show(verified, as_json)
     return 2 if test_status == "failed" else status
 
 
@@ -126,24 +131,41 @@ def main(argv: list[str] | None = None) -> int:
     if argv and argv[0] == "secrets":
         from .secrets import secrets_main
         return secrets_main(argv[1:])
-    parser = argparse.ArgumentParser(prog="guardkit", description="Local security scans and reviewed project fixes")
+    parser = argparse.ArgumentParser(prog="guardkit", description="Security tools for coding agents: scan, review, apply, verify")
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("secrets", help="Native credential storage and approved HTTP requests")
     for command in ("init", "scan", "fix", "doctor", "mcp", "uninstall"):
         cmd = sub.add_parser(command)
         cmd.add_argument("--root", type=Path, default=Path.cwd())
-        if command != "mcp": cmd.add_argument("--json", action="store_true")
+        if command != "mcp":
+            output = cmd.add_mutually_exclusive_group()
+            output.add_argument("--json", dest="json", action="store_true", default=True, help="Structured output (default)")
+            output.add_argument("--human", dest="json", action="store_false", help="Readable terminal output")
         if command == "fix":
-            cmd.add_argument("--check", action="store_true", help="Show proposed diffs without applying")
-            cmd.add_argument("--skip-tests", action="store_true", help="Only rerun scanners after approved edits")
-        if command == "init": cmd.add_argument("--no-agents", action="store_true", help="Skip project-local agent instructions")
+            mode = cmd.add_mutually_exclusive_group()
+            mode.add_argument("--check", action="store_true", help="Propose reviewable diffs (default)")
+            mode.add_argument("--apply", metavar="REVIEW_ID", help="Apply exact previously reviewed plans; requires task authorization")
+            tests = cmd.add_mutually_exclusive_group()
+            tests.add_argument("--run-tests", action="store_true", help="Explicitly authorize project test execution after applying")
+            tests.add_argument("--skip-tests", action="store_true", help=argparse.SUPPRESS)
+    package = sub.add_parser("plugin", help="Build a local MCP Apps plugin for private credential input")
+    package.add_argument("--root", type=Path, default=Path.cwd())
+    package.add_argument("--output", type=Path, required=True)
+    package.add_argument("--json", action="store_true", default=True)
     ns = parser.parse_args(argv)
     root = ns.root.resolve()
     if not root.is_dir():
-        print("Project directory does not exist.", file=sys.stderr)
+        if getattr(ns, "json", False):
+            print(json.dumps({"findings": [], "errors": ["Project directory does not exist."]}))
+        else:
+            print("Project directory does not exist.", file=sys.stderr)
         return 2
     try:
+        if ns.command == "plugin":
+            from .plugin import build
+            print(json.dumps(build(root, ns.output), indent=2))
+            return 0
         if ns.command == "doctor":
             report = doctor(root)
             if ns.json: print(json.dumps(report, indent=2))
@@ -155,24 +177,36 @@ def main(argv: list[str] | None = None) -> int:
         if ns.command == "init":
             start = time.monotonic()
             installed = provision.tools()
-            created = [] if ns.no_agents else agents.install(root)
+            created = agents.install(root)
             report = {"stack": detect(root), "tools": installed, "agent_files_created": created,
-                      "duration_seconds": round(time.monotonic() - start, 3)}
+                      "duration_seconds": round(time.monotonic() - start, 3),
+                      "mcp": {"command": sys.executable, "args": ["-I", "-m", "guardkit", "mcp", "--root", str(root)]},
+                      "next_action": "Use agent instructions to scan, triage, remediate, and verify within task authorization."}
             if ns.json: print(json.dumps(report, indent=2))
             else:
                 print("Guardkit ready\nDetected: " + (", ".join(report["stack"]) or "generic project"))
                 print("Application, dependency, configuration, and secret checks ready.\nRun `guardkit scan`.")
             return 0
         if ns.command == "scan": return _show(_scan(root), ns.json)
-        if ns.command == "fix": return _fix(root, ns.json, ns.check, ns.skip_tests)
+        if ns.command == "fix":
+            if ns.run_tests and not ns.apply:
+                raise ValueError("--run-tests requires --apply REVIEW_ID")
+            return _fix(root, ns.json, ns.apply, ns.run_tests)
         if ns.command == "mcp":
             agents.serve(root, lambda target: _scan(target))
             return 0
         if ns.command == "uninstall":
             # Never remove caches automatically: show exact location and manual instructions.
-            print("Remove the Guardkit package with your installer. Scanner cache: " + str(provision.cache_dir()))
-            print("Remove project-local Guardkit instruction files only if you no longer need them. Native credentials remain in your OS store.")
+            report = {"cache": str(provision.cache_dir()),
+                      "instructions": "Remove the package with your installer and Guardkit-owned instruction blocks/files if no longer needed. Native credentials remain in your OS store."}
+            if ns.json: print(json.dumps(report, indent=2))
+            else: print(report["instructions"] + " Scanner cache: " + report["cache"])
             return 0
+    except reviews.ReviewError as exc:
+        report = {"findings": [], "errors": [str(exc)], "error_code": "invalid_review", "next_action": "Run fix --check and review a fresh proposal."}
+        if getattr(ns, "json", False): print(json.dumps(report))
+        else: print(str(exc), file=sys.stderr)
+        return 2
     except provision.ProvisionError as exc:
         if getattr(ns, "json", False): print(json.dumps({"findings": [], "errors": [str(exc)]}))
         else: print(str(exc), file=sys.stderr)

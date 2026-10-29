@@ -1,5 +1,10 @@
 # Security audit — 2026-10-29
 
+This audit records the code before the AI-native workflow refactor. MCP now also
+exposes review-bound fix application, and the CLI uses proposal/apply review IDs.
+See [current validation](validation.md#ai-native-refactor--2026-10-29) for checks
+of the changed interfaces; earlier client/platform evidence below is historical.
+
 The review covered the Python CLI, scanner provisioning and invocation,
 credential broker, fix application, agent integration, packaging, and CI.
 Three issues were reproduced with synthetic inputs and fixed. No real

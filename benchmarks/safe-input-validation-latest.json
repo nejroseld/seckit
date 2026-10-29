@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-29",
+  "scope": "Agent-triggered Safe Input TUI credential enrollment",
+  "suite": {
+    "command": "GUARDKIT_LIVE_SCANNERS=1 python -m unittest discover -s tests -v",
+    "tests": 102,
+    "passed": 100,
+    "skipped": 2,
+    "failures": 0,
+    "skips": [
+      "Authenticated Codex smoke test (not enabled)",
+      "Native macOS Keychain (Linux host)"
+    ]
+  },
+  "tui_checks": [
+    "Real POSIX PTY login and token entry, all fields masked",
+    "Real PTY cancellation",
+    "Full CLI/isolated-worker/TTY flow using disposable synthetic secret-tool stub",
+    "No sentinel values in terminal transcript or tool stdout/stderr, including reflected store output",
+    "Tool stdin never used as enrollment fallback",
+    "Parent terminal echo disabled before spawn; pending input flushed and terminal restored",
+    "MCP and CLI metadata-only result contracts and invalid argument rejection"
+  ],
+  "native_store_checks": {
+    "linux": "Pipe-based enrollment covered using synthetic stub; no live Secret Service session used",
+    "macos": "Native add/update/release/buffer-wipe paths covered with fakes; not run on macOS"
+  },
+  "installed_package": {
+    "build_and_install": "passed",
+    "headless_cli": "passed",
+    "mcp_tool_discovery": "passed"
+  },
+  "limits": [
+    "Not a security boundary against unrestricted processes under the same OS identity",
+    "Requires local controlling terminal and curses; no browser/stdin fallback",
+    "Login records enroll data only; no automatic website authentication",
+    "No real credentials used"
+  ]
+}

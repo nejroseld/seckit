@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "guardkit-local"
 version = "0.1.0"
-description = "Local security scans, reviewed fixes, and credential brokering for developer projects"
+description = "AI-native local security toolkit for coding agents with deterministic scans and reviewed fixes"
 requires-python = ">=3.10"
 license = "MIT"
-dependencies = []
+dependencies = ["cryptography>=50.0.1"]
 
 [project.scripts]
 guardkit = "guardkit.cli:main"
@@ -17,4 +17,4 @@ guardkit = "guardkit.cli:main"
 include = ["guardkit*"]
 
 [tool.setuptools.package-data]
-guardkit = ["rules/*.yml"]
+guardkit = ["rules/*.yml", "ui/*.html"]

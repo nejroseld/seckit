@@ -1,5 +1,52 @@
 # Validation status
 
+## Safe Input App — 2026-10-29
+
+The full Linux run executed 113 tests: 113 passed, 10 skipped, no failures.
+With `GUARDKIT_LIVE_APP_UI=1`, the five Chromium checks of the private form
+also passed. A plugin built with `guardkit plugin` started its bundled server
+under isolated Python and answered `initialize`, `tools/list` (including
+`open_safe_input`) and `resources/list` (`ui://guardkit/safe-input.html`) over
+stdio.
+
+No real MCP Apps host rendered the form, so host registration and display are
+not verified. The native keystore path was tested with a disposable stub, not a
+live Secret Service or macOS Keychain session.
+
+## Safe Input TUI — 2026-10-29
+
+The current Linux run executed 102 tests: 100 passed, two skipped, no failures.
+Real scanner tests were enabled; the skips were authenticated Codex and native
+macOS Keychain. New tests exercised real PTYs for token/login entry and cancel,
+plus the complete CLI/isolated-worker/TTY path with a disposable native-store
+stub. Synthetic credential values did not appear in terminal transcripts or tool
+stdout/stderr, including deliberately reflected output from the store stub.
+The installed wheel also passed headless CLI failure and MCP tool discovery.
+
+Native Linux enrollment was tested with the disposable stub, not a live Secret
+Service session. macOS Security.framework add/update/cleanup paths were tested
+with fakes; this TUI path has not been executed on macOS. Login records enroll
+credentials only and do not implement website authentication. See the
+[Safe Input validation record](../benchmarks/safe-input-validation-latest.json).
+
+## AI-native refactor — 2026-10-29
+
+The AI-native refactor run executed 80 tests: 78 passed, two skipped, no failures.
+Real-scanner tests were enabled, including CLI and stdio MCP proposal/apply/rescan
+flows, single-use review IDs, exact-byte stale checks, and preservation of local
+edits. The skips were the authenticated Codex smoke test and native macOS
+Keychain. A new authenticated AI client session was not run for this refactor.
+
+Real-engine acceptance passed all four scan categories and verified one resolved
+finding. A clean virtual-environment installation also passed: generated agent
+commands ran from the inspected project with isolated Python, an untrusted local
+`guardkit.py` was not executed, repeated initialization changed no files, and
+existing CRLF team instructions survived. See the [current validation record](../benchmarks/ai-native-validation-latest.json).
+
+The results below and their linked artifacts are historical checks of earlier
+code, including the former terminal approval workflow. They do not establish
+current AI-client or platform coverage.
+
 For the subsequent security review, fixes, and their verification, see the
 [security audit](security-audit.md). The results below describe the earlier run.
 
