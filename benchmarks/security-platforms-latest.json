@@ -34,12 +34,13 @@
   },
   "native_secret_store": {
     "secret_tool_installed": true,
-    "isolated_dbus_launcher_installed": false,
-    "dbus_daemon_installed": false,
-    "keyring_daemon_installed": false,
-    "disposable_isolated_session_test": "not run: gnome-keyring-daemon absent; Fedora RPM download via dnf attempted with temp cache/persist/log dirs but mirror hostname resolution failed; existing user session bus deliberately not accessed",
+    "isolated_dbus_launcher_installed": true,
+    "dbus_daemon_installed": true,
+    "keyring_daemon_installed": true,
+    "disposable_isolated_session_test": "passed: GuardKit SecretStore put/read/delete in a private dbus-run-session and temporary HOME/XDG directories; synthetic value only; removed after read-back",
     "dbus_broker_launch_installed": true,
-    "rpm_download_attempt": "dnf download dbus-daemon dbus-tools gnome-keyring; failed before package retrieval (Could not resolve mirrors.fedoraproject.org)"
+    "rpm_download_attempt": "Fedora 44 dbus-daemon, dbus-tools, gnome-keyring, gcr3, and gcr3-base RPMs extracted under /tmp; no system installation",
+    "round_trip_status": "passed"
   },
   "windows_macos_execution": {
     "native_host_execution_available": false,

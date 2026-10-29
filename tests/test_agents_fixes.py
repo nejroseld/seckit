@@ -38,7 +38,7 @@ class SafeFixTests(unittest.TestCase):
     def test_proposes_and_applies_reviewable_secret_ignore(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / ".gitignore").write_text("dist/\n")
+            (root / ".gitignore").write_bytes(b"dist/\n")
             finding = {"id": "trivy-123", "rule_id": "SECRET-API", "title": "Secret found", "file": ".env.local"}
             plans = fixes.propose(root, [finding])
             self.assertEqual(len(plans), 1)
@@ -56,16 +56,19 @@ class SafeFixTests(unittest.TestCase):
             self.assertTrue((root / ".gitignore").read_text().startswith("# GuardKit:"))
 
     def test_proposes_exact_compose_line_fix_and_preserves_surrounding_content(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            source = "services:\n  app:\n    privileged: true # scanner finding\n    image: local/app\n"
-            (root / "compose.yaml").write_text(source)
-            finding = {"id": "trivy-compose-1", "rule_id": "AVD-DS-0002", "title": "privileged container", "file": "compose.yaml", "line": 3}
-            plan = fixes.propose(root, [finding])[0]
-            self.assertEqual(plan["kind"], "compose_privileged_false")
-            self.assertEqual(plan["after"], source.replace("privileged: true", "privileged: false"))
-            fixes.apply(root, [plan])
-            self.assertEqual((root / "compose.yaml").read_text(), plan["after"])
+        for newline in ("\n", "\r\n"):
+            with self.subTest(newline=repr(newline)), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                source = "services:\n  app:\n    privileged: true # scanner finding\n    image: local/app\n".replace("\n", newline)
+                # Exact byte fixtures avoid platform text-mode translation and
+                # verify that applying a fix preserves both LF and CRLF files.
+                (root / "compose.yaml").write_bytes(source.encode())
+                finding = {"id": "trivy-compose-1", "rule_id": "AVD-DS-0002", "title": "privileged container", "file": "compose.yaml", "line": 3}
+                plan = fixes.propose(root, [finding])[0]
+                self.assertEqual(plan["kind"], "compose_privileged_false")
+                self.assertEqual(plan["after"], source.replace("privileged: true", "privileged: false"))
+                fixes.apply(root, [plan])
+                self.assertEqual((root / "compose.yaml").read_bytes(), plan["after"].encode())
 
     def test_proposes_scanner_reported_dockerfile_nonroot_change(self):
         with tempfile.TemporaryDirectory() as tmp:
