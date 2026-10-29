@@ -1,0 +1,657 @@
+{
+  "checked_at_utc": "2026-10-29T09:37:24.427503+00:00",
+  "scope": "installed Semgrep scanner venv after verified pip bootstrap",
+  "inventory": [
+    {
+      "name": "annotated-types",
+      "version": "0.8.0"
+    },
+    {
+      "name": "annotated-types",
+      "version": "0.8.0"
+    },
+    {
+      "name": "anyio",
+      "version": "4.15.1"
+    },
+    {
+      "name": "anyio",
+      "version": "4.15.1"
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0"
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0"
+    },
+    {
+      "name": "boltons",
+      "version": "21.0.0"
+    },
+    {
+      "name": "boltons",
+      "version": "21.0.0"
+    },
+    {
+      "name": "bracex",
+      "version": "3.2"
+    },
+    {
+      "name": "bracex",
+      "version": "3.2"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.10.23"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.10.23"
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1"
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1"
+    },
+    {
+      "name": "charset-normalizer",
+      "version": "3.5.2"
+    },
+    {
+      "name": "charset-normalizer",
+      "version": "3.5.2"
+    },
+    {
+      "name": "click",
+      "version": "8.4.2"
+    },
+    {
+      "name": "click",
+      "version": "8.4.2"
+    },
+    {
+      "name": "click-option-group",
+      "version": "0.5.9"
+    },
+    {
+      "name": "click-option-group",
+      "version": "0.5.9"
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6"
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6"
+    },
+    {
+      "name": "cryptography",
+      "version": "50.0.2"
+    },
+    {
+      "name": "cryptography",
+      "version": "50.0.2"
+    },
+    {
+      "name": "exceptiongroup",
+      "version": "1.2.2"
+    },
+    {
+      "name": "exceptiongroup",
+      "version": "1.2.2"
+    },
+    {
+      "name": "face",
+      "version": "26.0.1"
+    },
+    {
+      "name": "face",
+      "version": "26.0.1"
+    },
+    {
+      "name": "glom",
+      "version": "25.12.0"
+    },
+    {
+      "name": "glom",
+      "version": "25.12.0"
+    },
+    {
+      "name": "googleapis-common-protos",
+      "version": "1.76.0"
+    },
+    {
+      "name": "googleapis-common-protos",
+      "version": "1.76.0"
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0"
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0"
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9"
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1"
+    },
+    {
+      "name": "httpx-sse",
+      "version": "0.4.3"
+    },
+    {
+      "name": "httpx-sse",
+      "version": "0.4.3"
+    },
+    {
+      "name": "idna",
+      "version": "3.20"
+    },
+    {
+      "name": "idna",
+      "version": "3.20"
+    },
+    {
+      "name": "importlib_metadata",
+      "version": "8.7.1"
+    },
+    {
+      "name": "importlib_metadata",
+      "version": "8.7.1"
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.25.1"
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.25.1"
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1"
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1"
+    },
+    {
+      "name": "markdown-it-py",
+      "version": "4.2.0"
+    },
+    {
+      "name": "markdown-it-py",
+      "version": "4.2.0"
+    },
+    {
+      "name": "mcp",
+      "version": "1.29.0"
+    },
+    {
+      "name": "mcp",
+      "version": "1.29.0"
+    },
+    {
+      "name": "mdurl",
+      "version": "0.1.2"
+    },
+    {
+      "name": "mdurl",
+      "version": "0.1.2"
+    },
+    {
+      "name": "opentelemetry-api",
+      "version": "1.37.0"
+    },
+    {
+      "name": "opentelemetry-api",
+      "version": "1.37.0"
+    },
+    {
+      "name": "opentelemetry-exporter-otlp-proto-common",
+      "version": "1.37.0"
+    },
+    {
+      "name": "opentelemetry-exporter-otlp-proto-common",
+      "version": "1.37.0"
+    },
+    {
+      "name": "opentelemetry-exporter-otlp-proto-http",
+      "version": "1.37.0"
+    },
+    {
+      "name": "opentelemetry-exporter-otlp-proto-http",
+      "version": "1.37.0"
+    },
+    {
+      "name": "opentelemetry-instrumentation",
+      "version": "0.58b0"
+    },
+    {
+      "name": "opentelemetry-instrumentation",
+      "version": "0.58b0"
+    },
+    {
+      "name": "opentelemetry-instrumentation-requests",
+      "version": "0.58b0"
+    },
+    {
+      "name": "opentelemetry-instrumentation-requests",
+      "version": "0.58b0"
+    },
+    {
+      "name": "opentelemetry-instrumentation-threading",
+      "version": "0.58b0"
+    },
+    {
+      "name": "opentelemetry-instrumentation-threading",
+      "version": "0.58b0"
+    },
+    {
+      "name": "opentelemetry-proto",
+      "version": "1.37.0"
+    },
+    {
+      "name": "opentelemetry-proto",
+      "version": "1.37.0"
+    },
+    {
+      "name": "opentelemetry-sdk",
+      "version": "1.37.0"
+    },
+    {
+      "name": "opentelemetry-sdk",
+      "version": "1.37.0"
+    },
+    {
+      "name": "opentelemetry-semantic-conventions",
+      "version": "0.58b0"
+    },
+    {
+      "name": "opentelemetry-semantic-conventions",
+      "version": "0.58b0"
+    },
+    {
+      "name": "opentelemetry-util-http",
+      "version": "0.58b0"
+    },
+    {
+      "name": "opentelemetry-util-http",
+      "version": "0.58b0"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3"
+    },
+    {
+      "name": "peewee",
+      "version": "3.19.0"
+    },
+    {
+      "name": "peewee",
+      "version": "3.19.0"
+    },
+    {
+      "name": "pip",
+      "version": "26.2.2"
+    },
+    {
+      "name": "pip",
+      "version": "26.2.2"
+    },
+    {
+      "name": "protobuf",
+      "version": "6.33.6"
+    },
+    {
+      "name": "protobuf",
+      "version": "6.33.6"
+    },
+    {
+      "name": "pycparser",
+      "version": "3.12"
+    },
+    {
+      "name": "pycparser",
+      "version": "3.12"
+    },
+    {
+      "name": "pydantic",
+      "version": "2.14.1"
+    },
+    {
+      "name": "pydantic",
+      "version": "2.14.1"
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.16.2"
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.16.2"
+    },
+    {
+      "name": "pydantic_core",
+      "version": "2.50.1"
+    },
+    {
+      "name": "pydantic_core",
+      "version": "2.50.1"
+    },
+    {
+      "name": "Pygments",
+      "version": "2.21.0"
+    },
+    {
+      "name": "Pygments",
+      "version": "2.21.0"
+    },
+    {
+      "name": "PyJWT",
+      "version": "2.15.1"
+    },
+    {
+      "name": "PyJWT",
+      "version": "2.15.1"
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.4"
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.4"
+    },
+    {
+      "name": "python-multipart",
+      "version": "0.0.32"
+    },
+    {
+      "name": "python-multipart",
+      "version": "0.0.32"
+    },
+    {
+      "name": "referencing",
+      "version": "0.37.0"
+    },
+    {
+      "name": "referencing",
+      "version": "0.37.0"
+    },
+    {
+      "name": "requests",
+      "version": "2.34.2"
+    },
+    {
+      "name": "requests",
+      "version": "2.34.2"
+    },
+    {
+      "name": "rich",
+      "version": "15.0.0"
+    },
+    {
+      "name": "rich",
+      "version": "15.0.0"
+    },
+    {
+      "name": "rpds-py",
+      "version": "2026.9.1"
+    },
+    {
+      "name": "rpds-py",
+      "version": "2026.9.1"
+    },
+    {
+      "name": "ruamel.yaml",
+      "version": "0.19.1"
+    },
+    {
+      "name": "ruamel.yaml",
+      "version": "0.19.1"
+    },
+    {
+      "name": "ruamel.yaml.clib",
+      "version": "0.2.15"
+    },
+    {
+      "name": "ruamel.yaml.clib",
+      "version": "0.2.15"
+    },
+    {
+      "name": "semantic-version",
+      "version": "2.10.0"
+    },
+    {
+      "name": "semantic-version",
+      "version": "2.10.0"
+    },
+    {
+      "name": "semgrep",
+      "version": "1.182.0"
+    },
+    {
+      "name": "semgrep",
+      "version": "1.182.0"
+    },
+    {
+      "name": "sse-starlette",
+      "version": "3.6.0"
+    },
+    {
+      "name": "sse-starlette",
+      "version": "3.6.0"
+    },
+    {
+      "name": "starlette",
+      "version": "1.10.0"
+    },
+    {
+      "name": "starlette",
+      "version": "1.10.0"
+    },
+    {
+      "name": "tomli",
+      "version": "2.4.1"
+    },
+    {
+      "name": "tomli",
+      "version": "2.4.1"
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.4"
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.4"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0"
+    },
+    {
+      "name": "urllib3",
+      "version": "2.8.0"
+    },
+    {
+      "name": "urllib3",
+      "version": "2.8.0"
+    },
+    {
+      "name": "uvicorn",
+      "version": "0.54.0"
+    },
+    {
+      "name": "uvicorn",
+      "version": "0.54.0"
+    },
+    {
+      "name": "wcmatch",
+      "version": "8.5.2"
+    },
+    {
+      "name": "wcmatch",
+      "version": "8.5.2"
+    },
+    {
+      "name": "wrapt",
+      "version": "1.17.3"
+    },
+    {
+      "name": "wrapt",
+      "version": "1.17.3"
+    },
+    {
+      "name": "zipp",
+      "version": "4.1.2"
+    },
+    {
+      "name": "zipp",
+      "version": "4.1.2"
+    }
+  ],
+  "inventory_sha256": "b1509aed5e2d0aca1d77ce8bff9b6dd61927ba5f58560fd2787bf3f989871b35",
+  "findings": [
+    {
+      "id": "trivy-657a85431b30b007",
+      "rule_id": "CVE-2026-116684",
+      "title": "mcp: Model Context Protocol Python SDK: Server bearer-token authentication accepts tokens issued for a different resource server",
+      "severity": "MEDIUM",
+      "confidence": "HIGH",
+      "file": "requirements.txt",
+      "line": 0,
+      "explanation": "The Model Context Protocol Python SDK is the official Python SDK for Model Context Protocol servers and clients. From 1.10.0 until 1.30.0 and 2.2.0, server-side bearer authentication configured through AuthSettings with token_verifier accepts a valid token issued for another service when the authorization server serves multiple resources and the TokenVerifier does not independently validate the aud audience. This resource-confusion flaw lets a token holder authenticate to the wrong MCP server and exercise that token's resulting access. This issue is fixed in versions 1.30.0 and 2.2.0.",
+      "impact": "Affected dependency mcp may expose the application to a known vulnerability.",
+      "remediation": "Upgrade mcp to 2.2.0, 1.30.0.",
+      "fix_available": false,
+      "verification": "Confirm the resolved package version in the lockfile and rerun the scan.",
+      "verification_status": "unverified",
+      "priority": "P2",
+      "classification": "confirmed",
+      "category": "dependency",
+      "scanner": "Trivy"
+    },
+    {
+      "id": "trivy-2e61b75e807a5fae",
+      "rule_id": "CVE-2026-116685",
+      "title": "mcp: Model Context Protocol Python SDK: HTTP client transports followed cross-origin redirects carrying custom headers and bodies",
+      "severity": "MEDIUM",
+      "confidence": "HIGH",
+      "file": "requirements.txt",
+      "line": 0,
+      "explanation": "The Model Context Protocol Python SDK is the official Python SDK for Model Context Protocol servers and clients. From 1.8.0 until 1.30.0 and 2.2.0, streamable_http_client, streamablehttp_client, sse_client, ClientSessionGroup, OAuth, and create_mcp_http_client client paths enable follow_redirects and follow redirects to a different origin, forwarding caller-supplied custom credential headers and, for 307 or 308 responses, the request body. An attacker who can influence a trusted endpoint's redirect destination can receive that material. This issue is fixed in versions 1.30.0 and 2.2.0.",
+      "impact": "Affected dependency mcp may expose the application to a known vulnerability.",
+      "remediation": "Upgrade mcp to 2.2.0, 1.30.0.",
+      "fix_available": false,
+      "verification": "Confirm the resolved package version in the lockfile and rerun the scan.",
+      "verification_status": "unverified",
+      "priority": "P2",
+      "classification": "confirmed",
+      "category": "dependency",
+      "scanner": "Trivy"
+    },
+    {
+      "id": "trivy-2cf331a414a840dc",
+      "rule_id": "CVE-2026-116686",
+      "title": "mcp: Model Context Protocol Python SDK: Client fetched server-chosen $ref URLs while validating tool results against output schemas",
+      "severity": "MEDIUM",
+      "confidence": "HIGH",
+      "file": "requirements.txt",
+      "line": 0,
+      "explanation": "The Model Context Protocol Python SDK is the official Python SDK for Model Context Protocol servers and clients. From 1.10.0 until 1.30.0 and 2.2.0, ClientSession, ClientSessionGroup, and Client tool calls validate server-declared outputSchema documents with jsonschema's default resolver, causing an unresolved $ref value to fetch an HTTP, HTTPS, or file URL from the client's network and filesystem context. A server can trigger blind requests or local-file reads and can stall every session in the process because resolution runs synchronously on the event loop without a timeout. This issue is fixed in versions 1.30.0 and 2.2.0.",
+      "impact": "Affected dependency mcp may expose the application to a known vulnerability.",
+      "remediation": "Upgrade mcp to 2.2.0, 1.30.0.",
+      "fix_available": false,
+      "verification": "Confirm the resolved package version in the lockfile and rerun the scan.",
+      "verification_status": "unverified",
+      "priority": "P2",
+      "classification": "confirmed",
+      "category": "dependency",
+      "scanner": "Trivy"
+    },
+    {
+      "id": "trivy-7d3e9b94716963e2",
+      "rule_id": "CVE-2026-59951",
+      "title": "mcp: mcp: mcp: Denial of Service via session memory exhaustion in streamable HTTP servers",
+      "severity": "MEDIUM",
+      "confidence": "HIGH",
+      "file": "requirements.txt",
+      "line": 0,
+      "explanation": "The MCP Python SDK, called mcp on PyPI, is a Python implementation of the Model Context Protocol (MCP). From 1.8.0 until 1.30.0 and 2.2.0, stateful Streamable HTTP servers, including FastMCP, MCPServer, Server.streamable_http_app(), and StreamableHTTPSessionManager, retain session entries without an idle expiration or aggregate session-count limit. DELETE, refused opening requests, and completed sessions do not reliably discard their entries, and each entry can retain parsed initialize parameters. A client that can reach the endpoint can therefore create ordinary short requests that grow server memory without bound until restart. Stateless HTTP, stdio, and SSE transports are not affected. This issue is fixed in versions 1.30.0 and 2.2.0.",
+      "impact": "Affected dependency mcp may expose the application to a known vulnerability.",
+      "remediation": "Upgrade mcp to 1.30.0, 2.2.0.",
+      "fix_available": false,
+      "verification": "Confirm the resolved package version in the lockfile and rerun the scan.",
+      "verification_status": "unverified",
+      "priority": "P2",
+      "classification": "confirmed",
+      "category": "dependency",
+      "scanner": "Trivy"
+    },
+    {
+      "id": "trivy-94e1fab7493de047",
+      "rule_id": "CVE-2026-114603",
+      "title": "opentelemetry-api: opentelemetry-api: opentelemetry-api: Denial of Service via regular expression backtracking in header parsing",
+      "severity": "MEDIUM",
+      "confidence": "HIGH",
+      "file": "requirements.txt",
+      "line": 0,
+      "explanation": "OpenTelemetry Python provides the Python API and SDK for OpenTelemetry. Prior to 1.45.1, the opentelemetry-api function TraceState.from_header in opentelemetry[path] reached through TraceContextTextMapPropagator.extract, parses inbound W3C tracestate headers with an unbounded optional-whitespace regular expression. A malformed header containing a long run of spaces or tabs without a following comma causes quadratic backtracking before the member-count limit is applied. Services using the default W3C Trace Context propagator can therefore spend excessive CPU time on one unauthenticated request when the HTTP server, parser, gateway, or custom carrier accepts a sufficiently large header. The processing can occupy a synchronous worker or delay unrelated requests on the same asynchronous event loop. The impact is limited to availability and does not expose or modify telemetry data or allow code execution. This issue is fixed in version 1.45.1.",
+      "impact": "Affected dependency opentelemetry-api may expose the application to a known vulnerability.",
+      "remediation": "Upgrade opentelemetry-api to 1.45.1.",
+      "fix_available": false,
+      "verification": "Confirm the resolved package version in the lockfile and rerun the scan.",
+      "verification_status": "unverified",
+      "priority": "P2",
+      "classification": "confirmed",
+      "category": "dependency",
+      "scanner": "Trivy"
+    }
+  ],
+  "errors": [],
+  "trivy_database": {
+    "Version": 2,
+    "NextUpdate": "2026-10-30T07:17:11.934066735Z",
+    "UpdatedAt": "2026-10-29T07:17:11.934066875Z",
+    "DownloadedAt": "2026-10-29T08:51:31.742595487Z"
+  },
+  "remediation": {
+    "pip": {
+      "before": "26.0.1",
+      "after": "26.2.2",
+      "publisher_release": "https://pypi.org/pypi/pip/26.2.2/json",
+      "fixed_advisory_count": 4
+    },
+    "build_backend_minimum": "setuptools>=84.1.0"
+  },
+  "residual_dependency_pins": "Semgrep 1.182.0 and upstream patch 1.182.1 require mcp==1.29.0 and OpenTelemetry~=1.37.0; those pins have not been overridden."
+}

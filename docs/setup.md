@@ -8,6 +8,13 @@ Trivy 0.76.1 is fetched from official GitHub releases; a shipped SHA256 pin auth
 
 Installations run in parallel with per-scanner process locks; wheel metadata/hash verification uses a bounded worker pool. No wheel is installed until all checks pass.
 
+Before resolving Semgrep dependencies, Guardkit upgrades the private environment's
+pip to pinned version 26.2.2. Its universal wheel is fetched directly from PyPI's
+release metadata, verified against the published SHA-256, and installed offline
+with `python -I`, `--no-deps`, and `--require-hashes`. Cached Semgrep environments
+receive the same pip check and update without rebuilding the scanner environment.
+The build backend requires setuptools 84.1.0 or later.
+
 Cache: `$XDG_CACHE_HOME/guardkit`, `~/.cache/guardkit`, or `%LOCALAPPDATA%/guardkit`. No permanent service runs. `doctor` diagnoses Python, tools, cache, stack, and native store availability. Initial install and CVE database fetch require internet. Failed downloads fail closed, not as clean scans. Python 3.10–3.14 scanner wheels are published; Linux Python 3.14 was tested locally. Unsupported wheels produce an actionable installation error. Linux x64/ARM64 and macOS x64/ARM64 are implementation targets; native Windows is conditional on publisher artifacts. WSL follows Linux. These are support targets, not a tested platform matrix.
 
 Uninstall the Python package using the installer that installed it, then remove the displayed Guardkit cache directory if desired. Remove only Guardkit-owned project instruction files, retaining local edits. `guardkit uninstall` prints these locations without deleting anything. Remove named credentials with `guardkit secrets delete NAME`; uninstall never removes credentials automatically.

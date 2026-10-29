@@ -61,22 +61,32 @@ The regression also covers bidirectional formatting controls and JSON round trip
 - The labeled benchmark reproduced 7/7 code matches and one known hard-negative
   false positive: 87.5% precision and 100% recall on this small sample.
   See [benchmark evidence](../benchmarks/security-benchmark-latest.json).
-- The installed Semgrep environment has **nine dependency advisory findings**:
+- The initial installed Semgrep environment had **nine dependency advisory findings**:
   four in `mcp==1.29.0`, one in `opentelemetry-api==1.37.0`, and four in
   `pip==26.0.1`. These are dependency inventory findings, not nine demonstrated
   exploits in Guardkit. Semgrep 1.182.1 still pins the same MCP/OpenTelemetry
   versions, so an engine patch upgrade alone cannot remove them. Guardkit invokes
   local scans, not the Semgrep MCP HTTP service. See the
   [exact inventory, advisory URLs, and applicability limits](../benchmarks/security-dependencies-latest.json).
+- Verified pip bootstrap now updates both fresh and cached private environments
+  to `pip==26.2.2` before resolving Semgrep dependencies. The real cached upgrade
+  completed successfully; rescan removed all four pip advisories. **Five MCP and
+  OpenTelemetry inventory findings remain** under Semgrep's upstream requirements.
+  See [post-update evidence](../benchmarks/security-dependencies-remediated-latest.json).
 - The build requirement now excludes known affected old setuptools versions:
   `setuptools>=84.1.0`. This does not remove the Semgrep environment warnings.
 
 ### Remaining limits
 
 This is a source review with targeted reproductions, not an exhaustive proof of
-security. Hosted CI, native macOS/Windows execution, and live native-keychain
-access are recorded separately as the extended verification continues. The
-standalone Trivy binary was not audited through a complete upstream SBOM.
+security. Native Linux, macOS, and Windows CI checks have run in the private
+[GitHub repository](https://github.com/nejroseld/guardkit). A disposable Linux
+Secret Service passed the real store/write/read/delete round trip; a separate
+macOS CI test passed native Keychain reads and deletion using a synthetic fixture.
+Interactive macOS enrollment still requires a person at the native prompt and
+was not automated. The standalone Trivy binary was not audited through a complete
+upstream SBOM. These checks do not establish that every upstream dependency
+advisory is exploitable or fully remediated in Guardkit.
 
 The broker's repeated requests during a TTL grant are documented behavior and
 were not counted as a vulnerability. Its documented lack of isolation from

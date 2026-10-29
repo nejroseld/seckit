@@ -22,15 +22,16 @@
   "wine_version_check": "wine installed; wine-11.0 (Staging)",
   "checkout": {
     "git_directory_present": true,
-    "git_directory_is_empty": true,
-    "remote_url_available": false,
-    "public_repository_url_in_readme_or_metadata": null
+    "remote_url_available": true,
+    "repository_url": "https://github.com/nejroseld/guardkit",
+    "visibility": "private"
   },
   "hosted_ci": {
     "workflow_present": true,
     "platform_matrix_covers_ubuntu_macos_windows": true,
     "workflow_file": ".github/workflows/test.yml",
-    "dispatch_attempted": false
+    "dispatch_attempted": true,
+    "trigger": "push to private repository"
   },
   "native_secret_store": {
     "secret_tool_installed": true,

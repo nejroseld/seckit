@@ -18,6 +18,7 @@ from pathlib import Path
 
 TRIVY = "0.76.1"
 SEMGREP = "1.182.0"
+PIP = "26.2.2"
 # Pinned digest of the publisher's checksum manifest, from immutable GitHub release.
 CHECKSUM_SHA256 = "885debc41b570179e81af560e5f393a66be29b9ff8c52915674f3eb2304c535d"
 
@@ -95,16 +96,65 @@ def _checked(command: list[str]) -> None:
     if proc.returncode:
         raise ProvisionError("Semgrep installation failed. Python 3.10–3.14 with binary wheels and network access is recommended; run guardkit doctor.")
 
+def _pip_version(python: str) -> str | None:
+    """Read the venv pip version without allowing the project cwd to shadow it."""
+    try:
+        proc = subprocess.run([python, "-I", "-m", "pip", "--version"], capture_output=True,
+                              text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode:
+        return None
+    match = re.search(r"\bpip\s+([0-9]+(?:\.[0-9A-Za-z]+)+)", proc.stdout)
+    return match.group(1) if match else None
+
+def _ensure_pip(python: str, base: Path) -> None:
+    """Replace venv bootstrap pip with a PyPI-metadata-verified pinned wheel."""
+    if _pip_version(python) == PIP:
+        return
+    try:
+        metadata = json.loads(fetch(f"https://pypi.org/pypi/pip/{PIP}/json"))
+    except (json.JSONDecodeError, TypeError) as exc:
+        raise ProvisionError("Pinned pip release metadata was invalid") from exc
+    info = metadata.get("info") or {}
+    if info.get("name", "").lower() != "pip" or info.get("version") != PIP:
+        raise ProvisionError("Pinned pip release metadata did not match the requested version")
+    filename = f"pip-{PIP}-py3-none-any.whl"
+    matches = [item for item in metadata.get("urls", [])
+               if item.get("filename") == filename and item.get("packagetype") == "bdist_wheel"]
+    if len(matches) != 1:
+        raise ProvisionError("Pinned pip universal wheel was missing from publisher metadata")
+    artifact = matches[0]
+    url = urllib.parse.urlsplit(artifact.get("url", ""))
+    digest = (artifact.get("digests") or {}).get("sha256", "")
+    if url.scheme != "https" or url.hostname != "files.pythonhosted.org" or not re.fullmatch(r"[0-9a-f]{64}", digest):
+        raise ProvisionError("Pinned pip wheel metadata was invalid")
+    wheel_data = fetch(artifact["url"])
+    verify(wheel_data, digest)
+    with tempfile.TemporaryDirectory(dir=base) as tmp:
+        wheel = Path(tmp) / filename
+        wheel.write_bytes(wheel_data)
+        requirements = Path(tmp) / "verified-pip.txt"
+        requirements.write_text(f"pip=={PIP} --hash=sha256:{digest}\n")
+        _checked([python, "-I", "-m", "pip", "--isolated", "--disable-pip-version-check",
+                  "install", "--no-index", "--no-deps", "--find-links", tmp,
+                  "--require-hashes", "--upgrade", "-r", str(requirements)])
+    if _pip_version(python) != PIP:
+        raise ProvisionError("Installed pip did not pass the pinned version check")
+
 def _semgrep(base: Path) -> str:
     folder = base / f"semgrep-{SEMGREP}"
     bindir = folder / ("Scripts" if os.name == "nt" else "bin")
     executable = bindir / ("semgrep.exe" if os.name == "nt" else "semgrep")
-    if executable.exists() and compatible(str(executable), SEMGREP): return str(executable)
+    python = str(bindir / ("python.exe" if os.name == "nt" else "python"))
+    if executable.exists() and compatible(str(executable), SEMGREP):
+        _ensure_pip(python, base)
+        return str(executable)
     try:
         venv.EnvBuilder(with_pip=True).create(folder)
     except (OSError, subprocess.SubprocessError) as exc:
         raise ProvisionError("Python venv/pip support is unavailable; use a full user-space Python installation.") from exc
-    python = str(bindir / ("python.exe" if os.name == "nt" else "python"))
+    _ensure_pip(python, base)
     # Download wheels without executing source builds. Verify every transitive wheel
     # against PyPI's HTTPS metadata before allowing pip to install any of them.
     with tempfile.TemporaryDirectory(dir=base) as tmp:

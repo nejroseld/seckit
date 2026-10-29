@@ -145,10 +145,16 @@ class WheelTrustTests(unittest.TestCase):
             (repo / 'pip.py').write_text(
                 "from pathlib import Path\nPath(%r).write_text('executed')\n" % str(marker)
             )
-            wheel_bytes = b'harmless synthetic wheel'
-            wheel_name = 'dependency-1.0-py3-none-any.whl'
-            metadata = {'urls': [{'filename': wheel_name, 'digests': {
-                'sha256': hashlib.sha256(wheel_bytes).hexdigest()}}]}
+            pip_bytes = b'harmless synthetic pip wheel'
+            pip_name = f'pip-{provision.PIP}-py3-none-any.whl'
+            pip_url = 'https://files.pythonhosted.org/packages/pip.whl'
+            pip_metadata = {'info': {'name': 'pip', 'version': provision.PIP}, 'urls': [{
+                'filename': pip_name, 'packagetype': 'bdist_wheel', 'url': pip_url,
+                'digests': {'sha256': hashlib.sha256(pip_bytes).hexdigest()}}]}
+            dependency_bytes = b'harmless synthetic dependency wheel'
+            dependency_name = 'dependency-1.0-py3-none-any.whl'
+            dependency_metadata = {'urls': [{'filename': dependency_name, 'digests': {
+                'sha256': hashlib.sha256(dependency_bytes).hexdigest()}}]}
             commands = []
 
             def checked(command):
@@ -165,16 +171,71 @@ class WheelTrustTests(unittest.TestCase):
                 self.assertIn('pip ', proc.stdout)
                 if 'download' in command:
                     destination = Path(command[command.index('--dest') + 1])
-                    (destination / wheel_name).write_bytes(wheel_bytes)
+                    (destination / dependency_name).write_bytes(dependency_bytes)
+
+            def metadata_for(url):
+                if url == 'https://pypi.org/pypi/pip/26.2.2/json':
+                    return json.dumps(pip_metadata).encode()
+                if url == pip_url:
+                    return pip_bytes
+                return json.dumps(dependency_metadata).encode()
 
             with patch.object(provision, '_checked', side_effect=checked), \
-                 patch.object(provision, 'fetch', return_value=json.dumps(metadata).encode()), \
+                 patch.object(provision, '_pip_version', side_effect=['26.0.1', provision.PIP]), \
+                 patch.object(provision, 'fetch', side_effect=metadata_for), \
                  patch.object(provision, 'compatible', return_value=True):
                 provision._semgrep(root)
 
-            self.assertEqual(len(commands), 2)
+            self.assertEqual(len(commands), 3)
             self.assertTrue(all(command[1] == '-I' for command in commands))
+            self.assertIn('verified-pip.txt', commands[0][-1])
+            self.assertIn('download', commands[1])
+            self.assertIn('verified.txt', commands[2][-1])
             self.assertFalse(marker.exists())
+
+    def test_tampered_pinned_pip_wheel_is_rejected_before_install(self):
+        wheel_name = f'pip-{provision.PIP}-py3-none-any.whl'
+        url = 'https://files.pythonhosted.org/packages/pip.whl'
+        metadata = {'info': {'name': 'pip', 'version': provision.PIP}, 'urls': [{
+            'filename': wheel_name, 'packagetype': 'bdist_wheel', 'url': url,
+            'digests': {'sha256': '0' * 64}}]}
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(provision, '_pip_version', return_value='26.0.1'), \
+             patch.object(provision, 'fetch', side_effect=[json.dumps(metadata).encode(), b'tampered wheel']), \
+             patch.object(provision, '_checked') as execute:
+            with self.assertRaisesRegex(provision.ProvisionError, 'checksum mismatch'):
+                provision._ensure_pip('/tmp/venv/bin/python', Path(tmp))
+        execute.assert_not_called()
+
+    def test_cached_semgrep_refreshes_pip_without_rebuilding_venv(self):
+        pip_bytes=b'verified pip wheel'
+        pip_name=f'pip-{provision.PIP}-py3-none-any.whl'
+        pip_url='https://files.pythonhosted.org/packages/pip.whl'
+        metadata={'info':{'name':'pip','version':provision.PIP},'urls':[{'filename':pip_name,'packagetype':'bdist_wheel','url':pip_url,'digests':{'sha256':hashlib.sha256(pip_bytes).hexdigest()}}]}
+        def metadata_for(url):
+            if url=='https://pypi.org/pypi/pip/26.2.2/json': return json.dumps(metadata).encode()
+            if url==pip_url: return pip_bytes
+            self.fail(f'unexpected metadata request: {url}')
+        with tempfile.TemporaryDirectory() as tmp:
+            base=Path(tmp)
+            bindir=base/f'semgrep-{provision.SEMGREP}'/('Scripts' if os.name=='nt' else 'bin')
+            bindir.mkdir(parents=True)
+            executable=bindir/('semgrep.exe' if os.name=='nt' else 'semgrep')
+            executable.write_text('existing compatible scanner')
+            with patch.object(provision,'compatible',return_value=True), \
+                 patch.object(provision,'_pip_version',side_effect=['26.0.1',provision.PIP]), \
+                 patch.object(provision,'fetch',side_effect=metadata_for), \
+                 patch.object(provision,'_checked') as install, \
+                 patch.object(provision.venv,'EnvBuilder') as rebuild:
+                self.assertEqual(provision._semgrep(base),str(executable))
+            rebuild.assert_not_called()
+            install.assert_called_once()
+            command=install.call_args.args[0]
+            self.assertIn('verified-pip.txt',command[-1])
+            self.assertIn('-I',command)
+            self.assertIn('--no-index',command)
+            self.assertIn('--no-deps',command)
+            self.assertIn('--require-hashes',command)
 
     def test_unverified_transitive_wheel_is_never_installed(self):
         calls=[]
@@ -183,10 +244,19 @@ class WheelTrustTests(unittest.TestCase):
             if 'download' in args:
                 destination=Path(args[args.index('--dest')+1])
                 (destination/'dependency-1.0-py3-none-any.whl').write_bytes(b'corrupted-wheel')
-        metadata={'urls':[{'filename':'dependency-1.0-py3-none-any.whl','digests':{'sha256':'0'*64}}]}
-        with tempfile.TemporaryDirectory() as tmp, patch.object(provision.venv,'EnvBuilder') as builder, patch.object(provision,'_checked',side_effect=command), patch.object(provision,'fetch',return_value=json.dumps(metadata).encode()):
+        pip_bytes=b'verified pip wheel'
+        pip_name=f'pip-{provision.PIP}-py3-none-any.whl'
+        pip_url='https://files.pythonhosted.org/packages/pip.whl'
+        pip_metadata={'info':{'name':'pip','version':provision.PIP},'urls':[{'filename':pip_name,'packagetype':'bdist_wheel','url':pip_url,'digests':{'sha256':hashlib.sha256(pip_bytes).hexdigest()}}]}
+        dependency_metadata={'urls':[{'filename':'dependency-1.0-py3-none-any.whl','digests':{'sha256':'0'*64}}]}
+        def metadata_for(url):
+            if url=='https://pypi.org/pypi/pip/26.2.2/json': return json.dumps(pip_metadata).encode()
+            if url==pip_url: return pip_bytes
+            return json.dumps(dependency_metadata).encode()
+        with tempfile.TemporaryDirectory() as tmp, patch.object(provision.venv,'EnvBuilder') as builder, patch.object(provision,'_pip_version',side_effect=['26.0.1',provision.PIP]), patch.object(provision,'_checked',side_effect=command), patch.object(provision,'fetch',side_effect=metadata_for):
             with self.assertRaises(provision.ProvisionError): provision._semgrep(Path(tmp))
-        self.assertEqual(len(calls),1)
+        self.assertEqual(len(calls),2)
         self.assertIn('-I',calls[0])
-        self.assertIn('--only-binary=:all:',calls[0])
-        self.assertNotIn('install',calls[0])
+        self.assertIn('verified-pip.txt',calls[0][-1])
+        self.assertIn('--only-binary=:all:',calls[1])
+        self.assertFalse(any('verified.txt' in call[-1] for call in calls))
