@@ -1,0 +1,25 @@
+{
+  "findings": [],
+  "errors": [],
+  "audit_scope": [
+    "guardkit/",
+    ".github/",
+    "pyproject.toml",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "excluded_intentionally": [
+    "benchmarks/fixtures/",
+    "tests/",
+    "build/",
+    "dist/"
+  ],
+  "checked_at_utc": "2026-10-29T09:25:16.117855+00:00",
+  "trivy_database": {
+    "Version": 2,
+    "NextUpdate": "2026-10-30T07:17:11.934066735Z",
+    "UpdatedAt": "2026-10-29T07:17:11.934066875Z",
+    "DownloadedAt": "2026-10-29T08:51:31.742595487Z"
+  }
+}

@@ -1,0 +1,125 @@
+# Guardkit secret storage and request broker
+
+Guardkit uses the operating system's existing password store; it does not create
+an encrypted file or implement cryptography. `SecretStore` supports the macOS
+login Keychain through the `security` utility and Linux Secret Service through
+`secret-tool` (typically provided by GNOME Keyring or KWallet). Linux needs a
+running Secret Service session. Windows and headless Linux are currently
+unsupported. Secret values are entered at a foreground terminal and never
+accepted as command arguments or environment values. Linux's hidden terminal
+input is piped to `secret-tool`; macOS uses the native `security` prompt because
+Apple's CLI has no safe stdin password option.
+
+The native stores are established platform facilities: Apple's Keychain Services
+stores small secret items in an encrypted database and supports access controls
+([Apple Keychain Services](https://developer.apple.com/documentation/security/keychain-services));
+Linux Secret Service defines the desktop secret-store API
+([freedesktop.org Secret Service specification](https://specifications.freedesktop.org/secret-service/latest/)).
+Guardkit delegates protection at rest to those services.
+
+## Broker boundary
+
+`RequestBroker` is an in-process building block, not an MCP server. An integration
+may expose `send()` only when the endpoint policy is fixed in trusted application
+code and approval remains in the trusted foreground terminal. Do not register
+`approve_interactive`, `_grant_after_confirmation`, `SecretStore._read`, or
+`SecretStore` itself as an MCP/tool interface. The broker accepts one exact HTTPS
+URL and method per endpoint policy, uses the credential only as an HTTP header,
+ignores proxy environment variables, blocks redirects, and returns only the
+numeric HTTP status. It drains and discards response bodies and ignores response
+headers because an upstream can echo credentials or request content in either.
+The in-memory approval lasts at most one hour and can be revoked immediately.
+
+The CLI supports one-shot requests and a narrow JSON-lines foreground service:
+
+```sh
+guardkit secrets request service-api https://api.example.test/v1/status --method GET --ttl 60
+```
+
+`request` prompts on `/dev/tty`, sends one bodyless request, and writes only the
+numeric HTTP status to stdout. `serve` prompts once on `/dev/tty`, then accepts
+only `{"op":"request"}` and `{"op":"revoke"}` lines on stdin. It does not
+accept URLs, methods, bodies, shell commands, or secret values through that
+protocol. `serve` is limited to macOS and Linux because it requires `/dev/tty`.
+Never expose terminal approval or the native store to the agent as a tool.
+
+The implementation borrows a narrow idea from keygrant: put values in an OS
+keystore and mediate their use with human approval. keygrant's documentation
+describes name-only agent metadata and exact-command grants; Guardkit does not
+execute arbitrary shell commands or pass values to child processes. Its optional
+broker is narrower: one configured HTTPS request with metadata-only output
+([keygrant overview](https://keygrant.app/docs/),
+[keygrant approvals](https://keygrant.app/docs/approvals/)).
+
+Infisical Agent is designed to fetch secrets and keep local files or templates in
+sync. For agent credential brokering, Infisical's current Agent Vault project
+acts as a separate HTTP proxy that injects credentials while forwarding upstream
+requests. Its own guidance recommends deploying it on a separate host from
+agents, which makes the trust boundary meaningful
+([Infisical Agent Vault](https://github.com/Infisical/agent-vault),
+[Agent Vault protocol](https://github.com/Infisical/agent-vault/blob/main/docs/agents/protocol.mdx)).
+Vault Agent is a general-purpose client daemon for auto-authentication, caching,
+templating, and process supervision; those features do not by themselves isolate
+an agent running under the same user
+([HashiCorp Vault Agent](https://developer.hashicorp.com/vault/docs/agent-and-proxy/agent)).
+
+## Limits and operational notes
+
+This is useful against accidental disclosure through the broker's response,
+logs, or source changes. It is **not** a security boundary against hostile code
+running with the same OS user. Such code can inspect process memory, invoke the
+native store directly, instrument Python, or use any already approved request.
+The TTY prompt is only meaningful when a person can inspect and control that
+terminal. Do not claim the agent is isolated from secrets on a shared unrestricted
+user account.
+For a strong boundary, place the broker and native credential store under a
+separate OS identity or host and expose only a separately authenticated,
+policy-limited network API.
+
+The HTTP body can contain non-secret request data and is limited to 1 MiB. The
+response is consumed and discarded up to 1 MiB; no response content is returned.
+The module does not provide response-body parsing, output redaction, a persistent
+approval database, remote vault sync, key rotation, or audit storage. Credential
+rotation and deletion happen in the OS store or upstream service. Python cannot
+guarantee zeroization of immutable strings in memory.
+
+## API sketch
+
+```python
+from guardkit.secrets import Endpoint, RequestBroker, SecretStore
+
+endpoint = Endpoint(
+    name="issue",
+    url="https://api.example.test/v1/issue",
+    method="POST",
+    credential_name="service-api",
+)
+broker = RequestBroker(SecretStore(), {endpoint.name: endpoint})
+broker.approve_interactive("issue", ttl=300)  # requires foreground TTY
+metadata = broker.send("issue", "POST", endpoint.url, b'{"action":"status"}')
+broker.revoke("issue")
+```
+
+Secret enrollment from a terminal:
+
+```text
+guardkit secrets put service-api
+```
+
+The prompt is hidden. Do not pipe secrets into the command or place them in shell
+history, process arguments, environment variables, logs, chat, or repository
+files. The corresponding `delete NAME` operation removes the named item.
+
+## Validation
+
+`tests/test_secrets_live.py` starts two temporary loopback HTTPS servers and
+creates a short-lived self-signed certificate with OpenSSL. Its test-only client
+trusts that certificate directly; it does not change system trust or weaken the
+broker's production TLS defaults. A synthetic token is held only by an in-memory
+fake store. The live checks send it over TLS, confirm that reflected response
+bodies and headers do not appear in results, verify redirects are not followed,
+and check that expiry and revocation prevent later network requests. The fixture
+does not write to a native keychain or secret service, and shuts down the servers
+and removes its temporary certificate and key at teardown.
+
+Run it with `python -m unittest tests.test_secrets_live -v`.

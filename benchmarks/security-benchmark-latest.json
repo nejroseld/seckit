@@ -1,0 +1,56 @@
+{
+  "fixture_pair": [
+    "benchmarks/fixtures/positive",
+    "benchmarks/fixtures/clean"
+  ],
+  "static_rule_precision_recall": {
+    "expected": 7,
+    "true_positive": 7,
+    "false_positive": 1,
+    "false_negative": 0,
+    "precision": 0.875,
+    "recall": 1.0
+  },
+  "clean_code_findings": 0,
+  "p0_precision_recall": {
+    "expected": 1,
+    "true_positive": 1,
+    "false_positive": 0,
+    "false_negative": 0,
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "hard_negative_code_findings": 1,
+  "hard_negative_note": "Safe Set-allowlisted redirect; reports here count as false positives, not hidden exclusions.",
+  "scanner_category_recall": {
+    "categories": {
+      "credential": {
+        "expected": 1,
+        "detected": 1,
+        "missed": 0,
+        "clean_fixture_findings": 0
+      },
+      "dependency": {
+        "expected": 1,
+        "detected": 1,
+        "missed": 0,
+        "clean_fixture_findings": 0
+      },
+      "misconfiguration": {
+        "expected": 1,
+        "detected": 1,
+        "missed": 0,
+        "clean_fixture_findings": 0
+      }
+    },
+    "recall": 1.0
+  },
+  "elapsed_seconds": 15.469,
+  "setup_seconds": null,
+  "setup_note": "Tool installation and Trivy database provisioning are external and unmeasured.",
+  "errors": {
+    "positive": [],
+    "clean": [],
+    "hard_negative": []
+  }
+}

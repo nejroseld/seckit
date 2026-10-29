@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-29",
+  "platform": "Linux x86_64",
+  "python": "3.14.6",
+  "trivy": "0.76.1",
+  "semgrep": "1.182.0",
+  "previous_sequential_install_seconds": 185.837,
+  "fresh_cache_parallel_install_seconds": 102.004,
+  "cached_init_seconds": 2.735,
+  "setup_runs": 2,
+  "successful_setup_runs": 2,
+  "tested_environments": 1,
+  "manual_project_configuration_steps": 0,
+  "database_download_included": false,
+  "note": "Fresh Guardkit/pip cache for optimized install; upstream/OS network caches uncontrolled. Not a population setup-success estimate."
+}
