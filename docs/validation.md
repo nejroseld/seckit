@@ -21,8 +21,8 @@ current AI-client or platform coverage.
 For the subsequent security review, fixes, and their verification, see the
 [security audit](security-audit.md). The results below describe the earlier run.
 
-Verified on Linux x64, Python 3.14.6, on 2026-10-29. The package is built locally;
-it has not been published to PyPI/npm. Subsequent native macOS and Windows
+Verified on Linux x64, Python 3.14.6, on 2026-10-29. The package was built locally;
+it was published to PyPI later, as seckit 0.1.0 on 2026-11-03. Subsequent native macOS and Windows
 Python 3.12 package checks passed in
 [hosted CI](https://github.com/nejroseld/seckit/actions/runs/40851239433).
 
