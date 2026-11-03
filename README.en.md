@@ -25,6 +25,11 @@ Guardkit finds vulnerabilities and leaked secrets. Your agent reviews the findin
 | ⚙️ **Config** | checks Dockerfile, Kubernetes, Terraform (Trivy) |
 | 🔑 **Leaked secrets** | finds keys and tokens in project files without printing values |
 | 🧾 **One report** | merges findings from all scanners into one list with priority and code location |
+| 🗺️ **Attack surface** | maps entry points, dangerous calls, access checks and insecure defaults, and ranks files to read first |
+| 🔀 **Change review** | shows new risky lines and removed checks in a diff or PR |
+| ⛓️ **Supply chain** | catches install scripts, git and URL dependencies, dependency confusion, GitHub Actions injection and `curl \| sh` |
+| 🔁 **Variants** | hunts siblings of a confirmed bug with a custom Semgrep rule or regex |
+| ✅ **Triage** | records true/false positive verdicts with reasons and exports Markdown and SARIF reports |
 | 🤖 **Agent** | plugs into Claude Code, Codex and Cursor via instructions and MCP; the agent reviews findings and applies reviewed fixes |
 
 ## Install
@@ -44,6 +49,6 @@ The repository is private for now, so you need GitHub access. The first run down
 
 ## Docs
 
-[Setup](docs/setup.md) · [Agents & MCP](docs/agents.md) · [Scanners](docs/scanners.md) · [Validation](docs/validation.md) · [Audit](docs/security-audit.md)
+[Setup](docs/setup.md) · [Agents & MCP](docs/agents.md) · [Scanners](docs/scanners.md) · [Audit tools](docs/audit-tools.md) · [Validation](docs/validation.md) · [Audit](docs/security-audit.md)
 
 <sub>MIT · Scanning does not guarantee that there are no vulnerabilities.</sub>

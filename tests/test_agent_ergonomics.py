@@ -89,7 +89,8 @@ class McpTests(unittest.TestCase):
         replies = self.call({"limit": "5"})
         self.assertEqual(replies[0]["error"]["code"], -32602)
         self.assertEqual(replies[1]["result"], {"resources": []})
-        self.assertEqual(replies[2]["result"], {"prompts": []})
+        self.assertEqual([p["name"] for p in replies[2]["result"]["prompts"]],
+                         ["security_audit", "differential_review", "variant_analysis", "triage_findings"])
 
 
 class InstallTests(unittest.TestCase):

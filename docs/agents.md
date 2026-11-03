@@ -36,7 +36,8 @@ example: `/absolute/venv/bin/python -I -m guardkit scan --root /absolute/project
 ## MCP server
 
 `guardkit mcp --root PROJECT` serves `scan`, `findings`,
-`propose_safe_fixes`, and `apply_safe_fixes` over stdio JSON-RPC. The root is
+`propose_safe_fixes`, and `apply_safe_fixes` over stdio JSON-RPC, plus the
+audit tools and prompts described in [Code audit tools](audit-tools.md). The root is
 fixed at startup. Proposal results include a session-memory `review_id`; it is
 valid only during that MCP session. Applying requires that ID and applies only
 the exact reviewed bytes. The project is rescanned after application. MCP
@@ -97,8 +98,8 @@ The generated instructions contain the interpreter path of the machine that ran
 
 `findings` accepts `id`, `min_priority` (`P0` to `P4`), `category`, `file`
 (path prefix), `limit` (default 50, max 200) and `offset`. The result carries
-`total` and `next_offset` (null on the last page). `resources/list` and
-`prompts/list` return empty lists.
+`total` and `next_offset` (null on the last page). `resources/list` returns an
+empty list; `prompts/list` returns the audit playbooks.
 
 ## CLI results
 
