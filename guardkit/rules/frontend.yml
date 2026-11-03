@@ -9,7 +9,7 @@ rules:
       confidence: MEDIUM
       impact: Attacker-controlled content may execute as code in the application context.
       remediation: Avoid eval; use explicit parsing or a safe dispatch table.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.javascript.dynamic-function
     languages: [javascript, typescript]
     severity: WARNING
@@ -20,7 +20,7 @@ rules:
       confidence: MEDIUM
       impact: Untrusted input may execute as code.
       remediation: Replace dynamic code generation with fixed, explicit logic.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.javascript.child-process-exec
     languages: [javascript, typescript]
     severity: WARNING
@@ -53,7 +53,7 @@ rules:
       confidence: LOW
       impact: Untrusted arguments may execute shell commands with server privileges.
       remediation: Prefer execFile or spawn with an argument array and validate input.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.react.dangerously-set-inner-html
     languages: [javascript, typescript]
     severity: WARNING
@@ -65,7 +65,7 @@ rules:
       confidence: MEDIUM
       impact: Untrusted HTML may execute scripts in visitors' browsers.
       remediation: Avoid raw HTML or sanitize it with a maintained allowlist sanitizer.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.javascript.weak-hash
     languages: [javascript, typescript]
     severity: WARNING
@@ -80,7 +80,7 @@ rules:
       confidence: LOW
       impact: Weak hashes may be vulnerable to collision attacks or password cracking.
       remediation: Use a modern cryptographic hash; use a password hashing function for passwords.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.javascript.sql-injection
     languages: [javascript, typescript]
     mode: taint
@@ -101,7 +101,7 @@ rules:
       confidence: MEDIUM
       impact: An attacker may alter SQL commands and read or modify database records.
       remediation: Use parameterized queries and bind user values separately from SQL text.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.javascript.ssrf
     languages: [javascript, typescript]
     mode: taint
@@ -122,7 +122,7 @@ rules:
       confidence: MEDIUM
       impact: An attacker may cause server requests to internal or restricted network services.
       remediation: Allowlist destinations and reject private, loopback, and link-local addresses after resolution.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.javascript.open-redirect
     languages: [javascript, typescript]
     mode: taint
@@ -140,7 +140,7 @@ rules:
       confidence: MEDIUM
       impact: A crafted link may redirect users to a malicious site.
       remediation: Allowlist local destinations or validate the URL origin before navigation.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.javascript.express-open-redirect
     languages: [javascript, typescript]
     mode: taint
@@ -161,7 +161,7 @@ rules:
       confidence: MEDIUM
       impact: A crafted request may redirect users to a malicious site.
       remediation: Allowlist relative destinations and reject external URL schemes and hosts.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.javascript.jwt-decode-unverified
     languages: [javascript, typescript]
     severity: WARNING
@@ -172,7 +172,7 @@ rules:
       confidence: MEDIUM
       impact: Unverified token claims may be forged by an attacker.
       remediation: Verify signatures and enforce expected issuer, audience, expiry, and algorithm before using claims.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.javascript.cors-reflect-credentials
     languages: [javascript, typescript]
     severity: ERROR
@@ -187,4 +187,4 @@ rules:
       confidence: HIGH
       impact: Cross-origin sites may be able to issue credentialed requests to the application.
       remediation: Allowlist trusted origins and review whether credentialed cross-origin access is required.
-      license: MIT
+      license: FSL-1.1-ALv2

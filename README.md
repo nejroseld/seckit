@@ -11,7 +11,7 @@
   <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776ab?logo=python&logoColor=white">
   <img alt="Linux · macOS · WSL" src="https://img.shields.io/badge/Linux%20·%20macOS%20·%20WSL-0f172a">
   <img alt="Trivy + Semgrep" src="https://img.shields.io/badge/Trivy%20%2B%20Semgrep-10b981">
-  <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-64748b"></a>
+  <a href="LICENSE"><img alt="FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-64748b"></a>
 </p>
 
 Guardkit ищет уязвимости, а ваш агент разбирает находки и исправляет код. Всё работает локально.
@@ -63,4 +63,4 @@ python3 -m venv .venv && .venv/bin/python -I -m pip install .
 
 [Установка](docs/setup.md) · [Агенты и MCP](docs/agents.md) · [Сканеры](docs/scanners.md) · [Инструменты аудита](docs/audit-tools.md) · [Проверки](docs/validation.md) · [Аудит](docs/security-audit.md)
 
-<sub>MIT · Сканирование не гарантирует, что уязвимостей нет.</sub>
+<sub>FSL-1.1-ALv2 · Сканирование не гарантирует, что уязвимостей нет.</sub>

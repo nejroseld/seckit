@@ -11,7 +11,7 @@
   <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776ab?logo=python&logoColor=white">
   <img alt="Linux · macOS · WSL" src="https://img.shields.io/badge/Linux%20·%20macOS%20·%20WSL-0f172a">
   <img alt="Trivy + Semgrep" src="https://img.shields.io/badge/Trivy%20%2B%20Semgrep-10b981">
-  <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-64748b"></a>
+  <a href="LICENSE"><img alt="FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-64748b"></a>
 </p>
 
 Guardkit finds vulnerabilities and leaked secrets. Your agent reviews the findings and fixes the code. No API key needed, everything runs locally.
@@ -51,4 +51,4 @@ The repository is private for now, so you need GitHub access. The first run down
 
 [Setup](docs/setup.md) · [Agents & MCP](docs/agents.md) · [Scanners](docs/scanners.md) · [Audit tools](docs/audit-tools.md) · [Validation](docs/validation.md) · [Audit](docs/security-audit.md)
 
-<sub>MIT · Scanning does not guarantee that there are no vulnerabilities.</sub>
+<sub>FSL-1.1-ALv2 · Scanning does not guarantee that there are no vulnerabilities.</sub>

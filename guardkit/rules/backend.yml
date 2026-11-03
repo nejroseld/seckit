@@ -9,7 +9,7 @@ rules:
       confidence: HIGH
       impact: An attacker may execute operating-system commands with the application's privileges.
       remediation: Pass an argument list and keep shell=False; validate each argument.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.python.pickle-load
     languages: [python]
     severity: ERROR
@@ -22,7 +22,7 @@ rules:
       confidence: MEDIUM
       impact: Malicious serialized input may execute code during deserialization.
       remediation: Use a data-only format such as JSON or strictly authenticate trusted serialized data.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.python.yaml-unsafe-load
     languages: [python]
     severity: ERROR
@@ -36,7 +36,7 @@ rules:
       confidence: MEDIUM
       impact: Crafted YAML may trigger unsafe object construction.
       remediation: Use yaml.safe_load for untrusted YAML.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.python.flask-debug
     languages: [python]
     severity: WARNING
@@ -47,7 +47,7 @@ rules:
       confidence: MEDIUM
       impact: The interactive debugger can expose sensitive runtime details and execution capabilities.
       remediation: Disable debug mode in deployed environments.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.python.requests-tls-disabled
     languages: [python]
     severity: WARNING
@@ -58,7 +58,7 @@ rules:
       confidence: HIGH
       impact: A network attacker may intercept or alter traffic to the remote service.
       remediation: Enable certificate verification and configure a trusted CA bundle if needed.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.python.sql-injection
     languages: [python]
     mode: taint
@@ -76,7 +76,7 @@ rules:
       confidence: MEDIUM
       impact: An attacker may alter SQL commands and read or modify database records.
       remediation: Use parameterized queries and keep user data in separate bound parameters.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.python.ssrf
     languages: [python]
     mode: taint
@@ -96,7 +96,7 @@ rules:
       confidence: MEDIUM
       impact: An attacker may cause server requests to internal or restricted network services.
       remediation: Allowlist destinations and reject private, loopback, and link-local addresses after resolution.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.python.path-traversal
     languages: [python]
     mode: taint
@@ -115,7 +115,7 @@ rules:
       confidence: MEDIUM
       impact: Path manipulation may expose files outside the intended directory.
       remediation: Resolve against a fixed base directory and verify the resolved path remains within it.
-      license: MIT
+      license: FSL-1.1-ALv2
   - id: guardkit.python.jwt-signature-disabled
     languages: [python]
     severity: ERROR
@@ -127,4 +127,4 @@ rules:
       confidence: HIGH
       impact: An attacker may forge tokens accepted by the application.
       remediation: Require signature verification and allowlist expected signing algorithms.
-      license: MIT
+      license: FSL-1.1-ALv2
