@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import time
 import urllib.parse
 import urllib.request
 import sys
@@ -193,10 +194,12 @@ def _locked_install(base: Path, name: str, installer) -> str:
             if lock.tell() == 0:
                 lock.write(b"0"); lock.flush()
             lock.seek(0)
-            try:
-                msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
-            except OSError as exc:
-                raise ProvisionError("Another installation is in progress; retry shortly.") from exc
+            while True:
+                try:
+                    msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+                    break
+                except OSError:
+                    time.sleep(0.5)
         else:
             import fcntl
             fcntl.flock(lock, fcntl.LOCK_EX)

@@ -6,6 +6,7 @@ import json
 import shutil
 import sys
 import shlex
+import subprocess
 import stat
 import os
 import uuid
@@ -33,6 +34,9 @@ def command_status() -> dict[str, Any]:
     found = shutil.which("seckit")
     if not found:
         return {"path": None, "ours": False}
+    if os.name == "nt":
+        launcher = os.path.normcase(os.path.dirname(os.path.abspath(found)))
+        return {"path": found, "ours": launcher == os.path.normcase(os.path.dirname(os.path.abspath(sys.executable)))}
     try:
         with open(found, "rb") as stream:
             first = stream.readline(4096).decode("utf-8", "replace").strip()
@@ -47,7 +51,10 @@ def _invocation(root: Path) -> str:
     """The command written into agent instructions: portable when possible."""
     if command_status()["ours"]:
         return "seckit"
-    return " ".join(shlex.quote(part) for part in (sys.executable, "-I", "-m", "seckit"))
+    parts = (sys.executable, "-I", "-m", "seckit")
+    if os.name == "nt":
+        return subprocess.list2cmdline(parts)
+    return " ".join(shlex.quote(part) for part in parts)
 
 
 def _instructions(root: Path) -> str:
