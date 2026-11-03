@@ -58,6 +58,6 @@ cd /путь/к/проекту && seckit init && seckit scan --human
 
 ## Документация
 
-[Установка](docs/setup.md) · [Агенты и MCP](docs/agents.md) · [Сканеры](docs/scanners.md) · [Инструменты аудита](docs/audit-tools.md) · [Проверки](docs/validation.md) · [Аудит](docs/security-audit.md)
+[Установка](docs/setup.md) · [Агенты и MCP](docs/agents.md) · [Сканеры](docs/scanners.md) · [Инструменты аудита](docs/audit-tools.md)
 
 <sub>FSL-1.1-ALv2 · Сканирование не гарантирует, что уязвимостей нет.</sub>
