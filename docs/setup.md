@@ -2,15 +2,100 @@
 
 Seckit is installed by the user and used by a coding agent as the project's local security toolkit. The agent supplies the intelligence: it investigates scanner evidence, interprets project context, and makes changes within the user's task. Seckit provides local deterministic tools and does not bundle an LLM or require an AI API key. Install it from [PyPI](https://pypi.org/project/seckit/) as the `seckit` package into its own environment outside the project being scanned, with `pipx install seckit` or `uv tool install seckit`; both put the `seckit` command on PATH. Releases are built by `.github/workflows/publish.yml` from a version tag and carry a Sigstore provenance attestation.
 
-## Install
+## Install (Linux and macOS)
+
+### Requirements
+
+- Python 3.10 to 3.14 with `venv` and `pip` (Seckit builds a private environment for Semgrep).
+- `pipx` or `uv`, to install Seckit into its own environment and put `seckit` on PATH.
+- `git` (recommended): the project root is the git top level, and change review reads diffs.
+- Internet on the first `init` and on scans that refresh the CVE database: GitHub releases (Trivy), pypi.org and files.pythonhosted.org (Semgrep, pip).
+- About 1 GB free in the cache directory `~/.cache/seckit` (the scanners alone take roughly 0.5 GB).
+- A glibc 2.34 or newer Linux (Debian 12, Ubuntu 22.04, Fedora 35 or newer), or musl (Alpine), or macOS 11 or newer on Intel or Apple silicon. Older distributions such as Ubuntu 20.04 and RHEL 8 have no Semgrep wheel; use a newer Python image or WSL with a recent distribution.
+
+### 1. Python, git and pipx
+
+macOS ([Homebrew](https://brew.sh)). The Python that ships with Xcode tools is 3.9, too old:
+
+```bash
+brew install python pipx git
+pipx ensurepath
+```
+
+Debian, Ubuntu (Ubuntu 23.04 and Debian 12 or newer have the `pipx` package):
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip pipx git
+pipx ensurepath
+```
+
+On an older release without the `pipx` package, replace it with `python3 -m pip install --user pipx`, then run `python3 -m pipx ensurepath`.
+
+Fedora, RHEL-compatible:
+
+```bash
+sudo dnf install -y python3 python3-pip pipx git
+pipx ensurepath
+```
+
+Arch:
+
+```bash
+sudo pacman -S --needed python python-pipx git
+pipx ensurepath
+```
+
+Alpine:
+
+```bash
+sudo apk add python3 py3-pip pipx git
+pipx ensurepath
+```
+
+Open a new terminal afterwards so PATH picks up `~/.local/bin`. Check `python3 --version` prints 3.10 or newer; if not, install a newer Python (`brew install python@3.13`, the `deadsnakes` PPA on Ubuntu, `dnf install python3.13`) and pass it to pipx with `--python python3.13`.
+
+Instead of pipx you can use [uv](https://docs.astral.sh/uv/getting-started/installation/) (`brew install uv`, or the official installer); it downloads a suitable Python by itself.
+
+### 2. Seckit
 
 ```bash
 pipx install seckit        # or uv tool install seckit
+seckit --version
+```
+
+### 3. A project
+
+```bash
 cd /path/to/project
 seckit init
 ```
 
-Run these in a terminal. `init` downloads the scanners and writes the agent instructions; from then on the agent uses Seckit through them.
+`init` downloads Trivy and Semgrep into the cache (about a minute the first time) and writes the agent instructions into the project. Preview first with `seckit init --plan`. Then run `seckit doctor`: it reports the Python, the platform, whether `seckit` on PATH belongs to this installation, the scanner versions and the cache path.
+
+### Update and remove
+
+```bash
+pipx upgrade seckit            # uv tool upgrade seckit
+seckit init                    # in each project, to refresh its instructions
+```
+
+```bash
+seckit uninstall               # in a project: removes only Seckit-managed blocks and files
+pipx uninstall seckit          # uv tool uninstall seckit
+rm -rf ~/.cache/seckit         # scanners and review cache
+```
+
+### If something fails
+
+| Symptom | Fix |
+|---|---|
+| `seckit: command not found` | Run `pipx ensurepath` and open a new terminal. |
+| `Python venv/pip support is unavailable` | Debian and Ubuntu: `sudo apt install python3-venv`. |
+| `Semgrep installation failed` | Python older than 3.10, a Linux older than glibc 2.34, or no access to pypi.org. Run `seckit doctor`. |
+| `Download unavailable` | Allow HTTPS to github.com, pypi.org and files.pythonhosted.org, or set `HTTPS_PROXY`. |
+| `Scanner cache is not writable` | Point `XDG_CACHE_HOME` at a writable directory. |
+| `doctor` says `seckit` on PATH is not this installation | Another copy shadows it; remove the old one or put the pipx `bin` directory first on PATH. |
 
 ### Allow seckit in your agent
 
