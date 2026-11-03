@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import json
 import platform
-import shutil
 import shlex
 import subprocess
 import sys
@@ -121,20 +120,15 @@ def doctor(root: Path) -> dict:
     return {"version": __version__, "python": platform.python_version(), "platform": platform.platform(),
             "cache": str(provision.cache_dir()), "tools": available,
             "expected_versions": {"trivy": provision.TRIVY, "semgrep": provision.SEMGREP},
-            "stack": detect(root), "native_secret_store": bool(shutil.which("security" if sys.platform == "darwin" else "secret-tool")),
-            "limitations": ["Scanners require initial downloads; CVE databases require periodic network access.",
-                            "Secret isolation from unrestricted same-user processes is not provided."]}
+            "stack": detect(root),
+            "limitations": ["Scanners require initial downloads; CVE databases require periodic network access."]}
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    if argv and argv[0] == "secrets":
-        from .secrets import secrets_main
-        return secrets_main(argv[1:])
     parser = argparse.ArgumentParser(prog="guardkit", description="Security tools for coding agents: scan, review, apply, verify")
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("secrets", help="Native credential storage and approved HTTP requests")
     for command in ("init", "scan", "fix", "doctor", "mcp", "uninstall"):
         cmd = sub.add_parser(command)
         cmd.add_argument("--root", type=Path, default=Path.cwd())
@@ -149,10 +143,6 @@ def main(argv: list[str] | None = None) -> int:
             tests = cmd.add_mutually_exclusive_group()
             tests.add_argument("--run-tests", action="store_true", help="Explicitly authorize project test execution after applying")
             tests.add_argument("--skip-tests", action="store_true", help=argparse.SUPPRESS)
-    package = sub.add_parser("plugin", help="Build a local MCP Apps plugin for private credential input")
-    package.add_argument("--root", type=Path, default=Path.cwd())
-    package.add_argument("--output", type=Path, required=True)
-    package.add_argument("--json", action="store_true", default=True)
     ns = parser.parse_args(argv)
     root = ns.root.resolve()
     if not root.is_dir():
@@ -162,17 +152,12 @@ def main(argv: list[str] | None = None) -> int:
             print("Project directory does not exist.", file=sys.stderr)
         return 2
     try:
-        if ns.command == "plugin":
-            from .plugin import build
-            print(json.dumps(build(root, ns.output), indent=2))
-            return 0
         if ns.command == "doctor":
             report = doctor(root)
             if ns.json: print(json.dumps(report, indent=2))
             else:
                 print(f"Guardkit {__version__}\nPython {report['python']}\nCache: {report['cache']}")
                 for tool, version in report['expected_versions'].items(): print(f"  {tool} {version}: {'ready' if tool in report['tools'] else 'missing; run guardkit init'}")
-                print("Native secret store: " + ("adapter available; live store not checked" if report['native_secret_store'] else "unavailable; see docs/secrets.md"))
             return 0 if len(report["tools"]) == 2 else 2
         if ns.command == "init":
             start = time.monotonic()
@@ -198,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
         if ns.command == "uninstall":
             # Never remove caches automatically: show exact location and manual instructions.
             report = {"cache": str(provision.cache_dir()),
-                      "instructions": "Remove the package with your installer and Guardkit-owned instruction blocks/files if no longer needed. Native credentials remain in your OS store."}
+                      "instructions": "Remove the package with your installer and Guardkit-owned instruction blocks/files if no longer needed."}
             if ns.json: print(json.dumps(report, indent=2))
             else: print(report["instructions"] + " Scanner cache: " + report["cache"])
             return 0

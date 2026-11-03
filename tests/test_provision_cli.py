@@ -61,8 +61,7 @@ class CLITests(unittest.TestCase):
             code, out, err = self.run_cli(['init','--root',tmp])
             self.assertEqual(code,0)
             self.assertIn('Next.js',json.loads(out)['stack'])
-            self.assertEqual(set(json.loads(out)['agent_files_created']), {'AGENTS.md', 'CLAUDE.md', '.cursor/rules/guardkit.mdc', '.agents/skills/guardkit/SKILL.md', '.claude/skills/guardkit/SKILL.md',
-                         *('.claude/skills/guardkit-input/' + name for name in ('.claude-plugin/plugin.json', 'hooks/hooks.json', 'hooks/register.tsx', 'types/index.d.ts'))})
+            self.assertEqual(set(json.loads(out)['agent_files_created']), {'AGENTS.md', 'CLAUDE.md', '.cursor/rules/guardkit.mdc', '.agents/skills/guardkit/SKILL.md', '.claude/skills/guardkit/SKILL.md'})
             code, out, err = self.run_cli(['init','--root',tmp])
             self.assertEqual(json.loads(out)['agent_files_created'],[])
 

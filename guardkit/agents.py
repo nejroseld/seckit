@@ -28,8 +28,6 @@ GuardKit is an always-on security assistant for this repository. During code cha
 
 Run `{command} scan --root {shlex.quote(str(root))} --json` to inspect the repository. Review all findings and scanner errors; incomplete checks are not clean. Run `{command} fix --root {shlex.quote(str(root))} --json` to generate sanitized proposed diffs and a review_id. Explain and show each diff. Apply the exact review_id with `{command} fix --root {shlex.quote(str(root))} --apply REVIEW_ID` when the current task already authorizes the remediation; do not ask for a redundant approval prompt. Implement appropriate manual remediation for findings without safe proposals when the user's task already authorizes those code changes. Rescan and report remaining findings and incomplete checks.
 
-For credentials, call MCP `open_safe_input` with a non-secret name, kind `token` or `login`, and a service label. In MCP Apps clients this opens an encrypted private form; use `safe_input_status` with its request_id to check completion. Never invoke app-only submit tools on the user's behalf. In Claude Code, the installed guardkit-input panel provides `mcp__guardkit-input__open_safe_input` and `mcp__guardkit-input__safe_input_status` (same arguments; the form is a masked pane, and the call returns at once with awaiting_user). In terminal-only clients it opens the masked TUI; or run `{command} secrets input NAME --kind token --service SERVICE`. The user enters data in a dedicated masked TUI on their own terminal. Only status and an opaque credential reference return to you. Never ask for values in chat or tool arguments, retrieve them from the keystore, or capture terminal input. If the TUI is unavailable, ask the user to run that command in their own terminal; never fall back to tool stdin. Login records enroll credentials only; they do not automatically sign into websites.
-
 For MCP, call `propose_safe_fixes`, show its sanitized diffs, then call `apply_safe_fixes` with that review_id only when the user's current task authorizes the displayed changes. Never execute repository scripts, tests, builds, or other project code as verification unless the user explicitly requested it.
 {_BLOCK_END}"""
 
@@ -110,23 +108,6 @@ def _replace_managed(existing: str, block: str) -> str:
     return existing + sep + "\n" + block + "\n"
 
 
-_MOD_DIR = ".claude/skills/guardkit-input/"
-_MOD_FILES = (("plugin.json", ".claude-plugin/plugin.json"), ("hooks.json", "hooks/hooks.json"),
-              ("register.tsx", "hooks/register.tsx"), ("index.d.ts", "types/index.d.ts"))
-
-
-def _mod_targets() -> tuple[tuple[str, str], ...]:
-    """Claude Code panel mod for private credential entry, bound to this installation."""
-    source = Path(__file__).resolve().parent
-    out = []
-    for name, relative in _MOD_FILES:
-        text = (source / "claude_mod" / name).read_text(encoding="utf-8")
-        text = text.replace("'__GUARDKIT_PYTHON__'", json.dumps(sys.executable))
-        text = text.replace("'__GUARDKIT_SOURCE__'", json.dumps(str(source.parent)))
-        out.append((_MOD_DIR + relative, text))
-    return tuple(out)
-
-
 def install(root: Path) -> list[str]:
     """Install or update additive project-local agent guidance."""
     root = Path(root).resolve()
@@ -136,7 +117,7 @@ def install(root: Path) -> list[str]:
     targets = (("AGENTS.md", managed + "\n"), ("CLAUDE.md", managed + "\n"),
                (".cursor/rules/guardkit.mdc", _cursor_content(root)),
                (".agents/skills/guardkit/SKILL.md", _skill(root)),
-               (".claude/skills/guardkit/SKILL.md", _skill(root))) + _mod_targets()
+               (".claude/skills/guardkit/SKILL.md", _skill(root)))
     changed: list[str] = []
     legacy = _legacy_contents()
     for relative, content in targets:
@@ -170,9 +151,7 @@ def install(root: Path) -> list[str]:
             finally:
                 if fd >= 0:
                     os.close(fd)
-            if relative.startswith(_MOD_DIR):
-                updated = content
-            elif before in legacy:
+            if before in legacy:
                 updated = content
             elif relative.endswith("guardkit.mdc"):
                 updated = _cursor_update(before, root)
@@ -221,62 +200,11 @@ def _safe_target(root: Path, relative: str) -> Path | None:
 
 
 
-_APP_URI = "ui://guardkit/safe-input.html"
-_APP_MIME = "text/html;profile=mcp-app"
-_APP_RESULT_SCHEMA = {"type": "object", "properties": {
-    "status": {"type": "string", "enum": ["awaiting_user", "stored", "failed", "cancelled", "expired", "unavailable", "unknown"]},
-    "request_id": {"type": "string"}, "credential_ref": {"type": "string"},
-    "kind": {"type": "string", "enum": ["token", "login"]}, "service": {"type": "string"}},
-    "required": ["status"], "additionalProperties": False}
-
-
-def _supports_app_ui(params: object) -> bool:
-    try:
-        extension = params["capabilities"]["extensions"]["io.modelcontextprotocol/ui"]
-        mime_types = extension.get("mimeTypes") if isinstance(extension, dict) else None
-        return isinstance(mime_types, list) and _APP_MIME in mime_types
-    except (KeyError, TypeError):
-        return False
-
-
-def _app_tools() -> list[dict[str, Any]]:
-    identity = {"request_id": {"type": "string", "minLength": 32, "maxLength": 32},
-                "capability": {"type": "string", "minLength": 32, "maxLength": 128}}
-    encrypted = {**identity, **{key: {"type": "string", "maxLength": 100000}
-                              for key in ("wrapped_key", "nonce", "ciphertext")}}
-    private = {"ui": {"visibility": ["app"]}, "openai/visibility": "private",
-               "openai/widgetAccessible": True}
-    tools = [
-        {"name": "submit_safe_input", "description": "App-only: store an authenticated encrypted enrollment envelope. Never accepts plaintext credentials.",
-         "inputSchema": {"type": "object", "properties": encrypted, "required": list(encrypted), "additionalProperties": False},
-         "annotations": {"readOnlyHint": False, "destructiveHint": True, "openWorldHint": False}, "_meta": private},
-        {"name": "cancel_safe_input", "description": "App-only: cancel this credential input request.",
-         "inputSchema": {"type": "object", "properties": identity, "required": list(identity), "additionalProperties": False},
-         "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}, "_meta": private},
-        {"name": "safe_input_status", "description": "Get only the credential request status and reference, never its value.",
-         "inputSchema": {"type": "object", "properties": {"request_id": identity["request_id"]}, "required": ["request_id"], "additionalProperties": False},
-         "annotations": {"readOnlyHint": True, "openWorldHint": False}},
-    ]
-    for tool in tools:
-        tool["outputSchema"] = _APP_RESULT_SCHEMA
-    return tools
-
-
-def _app_resource() -> dict[str, Any]:
-    return {"uri": _APP_URI, "mimeType": _APP_MIME,
-            "text": (Path(__file__).with_name("ui") / "safe_input.html").read_text(encoding="utf-8"),
-            "_meta": {"ui": {"prefersBorder": True, "csp": {"connectDomains": [], "resourceDomains": [], "frameDomains": []}},
-                      "openai/widgetDescription": "Private encrypted credential entry. The assistant receives only status and a credential reference.",
-                      "openai/ui": {"availableDisplayModes": ["inline"]}}}
-
-
 def serve(root: Path, scan_callback: Callable[[Path], dict[str, Any]]) -> None:
     """Serve a fixed-root MCP endpoint with review-bound safe-fix application."""
     root = Path(root).resolve()
     latest: dict[str, Any] | None = None
     reviews: dict[str, dict[str, Any]] = {}
-    ui_supported = False
-    app = None
 
     def respond(message: dict[str, Any]) -> None:
         sys.stdout.write(json.dumps(message, ensure_ascii=False, separators=(",", ":")) + "\n")
@@ -298,28 +226,11 @@ def serve(root: Path, scan_callback: Callable[[Path], dict[str, Any]]) -> None:
         return output
 
     tools = [
-        {"name": "open_safe_input", "description": "Ask the user to enter a token or login in a masked TUI on their controlling terminal. Values go only to the OS keystore. Returns status and reference only; never supply credential values in arguments.",
-         "inputSchema": {"type": "object", "properties": {
-             "name": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$"},
-             "kind": {"type": "string", "enum": ["token", "login"], "default": "token"},
-             "service": {"type": "string", "minLength": 1, "maxLength": 128}},
-             "required": ["name"], "additionalProperties": False}},
         {"name": "scan", "description": "Run configured local GuardKit scanners on the fixed repository.", "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False}},
         {"name": "findings", "description": "Return findings and scanner errors; incomplete scans are not clean.", "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False}},
         {"name": "propose_safe_fixes", "description": "Create a review id and sanitized diffs. Show them; apply only if the current user task already authorizes the changes.", "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False}},
         {"name": "apply_safe_fixes", "description": "Apply a previously reviewed proposal only when the current user task authorizes those displayed changes. Then rescan.", "inputSchema": {"type": "object", "properties": {"review_id": {"type": "string"}}, "required": ["review_id"], "additionalProperties": False}},
     ]
-
-    def offered_tools() -> list[dict[str, Any]]:
-        if not ui_supported:
-            return tools
-        offered = [dict(tool) for tool in tools]
-        offered[0]["description"] = "Open a private encrypted in-chat credential form for the user. Accepts metadata only; poll safe_input_status for completion. Never ask for values in chat."
-        offered[0]["outputSchema"] = _APP_RESULT_SCHEMA
-        offered[0]["annotations"] = {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}
-        offered[0]["_meta"] = {"ui": {"resourceUri": _APP_URI, "visibility": ["model", "app"]},
-                               "openai/outputTemplate": _APP_URI, "openai/widgetAccessible": True}
-        return offered + _app_tools()
 
     def run_scan() -> dict[str, Any]:
         nonlocal latest
@@ -341,35 +252,17 @@ def serve(root: Path, scan_callback: Callable[[Path], dict[str, Any]]) -> None:
             if method in ("notifications/initialized", "notifications/cancelled"):
                 continue
             if method == "initialize":
-                ui_supported = _supports_app_ui(params)
-                if ui_supported:
-                    from .safe_app import SafeInputApp
-                    app = SafeInputApp()
-                else:
-                    app = None
                 requested_version = params.get("protocolVersion") if isinstance(params, dict) else None
                 protocol = requested_version if requested_version in {"2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25"} else "2024-11-05"
-                result(message_id, {"protocolVersion": protocol, "capabilities": {"tools": {}, "resources": {}}, "serverInfo": {"name": "guardkit", "version": "0.1.0"}})
+                result(message_id, {"protocolVersion": protocol, "capabilities": {"tools": {}}, "serverInfo": {"name": "guardkit", "version": "0.1.0"}})
             elif method == "ping":
                 result(message_id, {})
             elif method == "tools/list":
-                result(message_id, {"tools": offered_tools()})
-            elif method == "resources/list":
-                result(message_id, {"resources": [{"uri": _APP_URI, "name": "Guardkit Safe Input", "mimeType": _APP_MIME}]})
-            elif method == "resources/templates/list":
-                result(message_id, {"resourceTemplates": []})
-            elif method == "resources/read":
-                if not isinstance(params, dict) or params.get("uri") != _APP_URI:
-                    rpc_error(message_id, -32602, "Unknown resource")
-                else:
-                    try:
-                        result(message_id, {"contents": [_app_resource()]})
-                    except OSError:
-                        rpc_error(message_id, -32603, "App resource unavailable")
+                result(message_id, {"tools": tools})
             elif method == "tools/call":
                 name = params.get("name") if isinstance(params, dict) else None
                 args = params.get("arguments", {}) if isinstance(params, dict) else None
-                descriptors = {tool["name"]: tool for tool in offered_tools()}
+                descriptors = {tool["name"]: tool for tool in tools}
                 descriptor = descriptors.get(name) if isinstance(name, str) else None
                 if descriptor is None:
                     rpc_error(message_id, -32602, "Unknown tool")
@@ -379,28 +272,6 @@ def serve(root: Path, scan_callback: Callable[[Path], dict[str, Any]]) -> None:
                     rpc_error(message_id, -32602, "Invalid tool arguments")
                 else:
                     try:
-                        if name == "submit_safe_input":
-                            result(message_id, app.submit(args))
-                            continue
-                        if name == "cancel_safe_input":
-                            result(message_id, app.cancel(args))
-                            continue
-                        if name == "safe_input_status":
-                            result(message_id, app.status(args["request_id"]))
-                            continue
-                        if name == "open_safe_input" and ui_supported:
-                            result(message_id, app.open(args["name"], args.get("kind", "token"), args.get("service")))
-                            continue
-                        if name == "open_safe_input":
-                            from .safe_input import request as open_input
-                            from .secrets import SecretError
-                            try:
-                                value = open_input(args.get("name"), args.get("kind", "token"), args.get("service"))
-                            except SecretError:
-                                rpc_error(message_id, -32602, "Invalid safe-input metadata")
-                                continue
-                            result(message_id, text_result(value, value["status"] not in {"stored", "cancelled"}))
-                            continue
                         if name == "apply_safe_fixes":
                             review_id = args["review_id"]
                             review = reviews.pop(review_id, None)

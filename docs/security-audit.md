@@ -1,5 +1,7 @@
 # Security audit — 2026-10-29
 
+> Secret management (credential store, safe input, HTTP broker) has been removed from the product. Sections below that cover it describe past state.
+
 This audit records the code before the AI-native workflow refactor. MCP now also
 exposes review-bound fix application, and the CLI uses proposal/apply review IDs.
 See [current validation](validation.md#ai-native-refactor--2026-10-29) for checks

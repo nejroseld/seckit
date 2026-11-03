@@ -14,7 +14,7 @@
   <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-64748b"></a>
 </p>
 
-Guardkit finds vulnerabilities. Your agent reviews the findings and fixes the code. No API key needed, everything runs locally.
+Guardkit finds vulnerabilities and leaked secrets. Your agent reviews the findings and fixes the code. No API key needed, everything runs locally.
 
 ## What it does
 
@@ -24,9 +24,8 @@ Guardkit finds vulnerabilities. Your agent reviews the findings and fixes the co
 | 📦 **Dependencies** | finds known CVEs in packages (Trivy) |
 | ⚙️ **Config** | checks Dockerfile, Kubernetes, Terraform (Trivy) |
 | 🔑 **Leaked secrets** | finds keys and tokens in project files without printing values |
-| 🔐 **Secret storage** | stores tokens and logins in Keychain (macOS) or Secret Service (Linux) |
-| 🙈 **Input outside the chat** | opens a masked form: you type the token, the agent gets only a reference |
-| ✅ **Requests with a token** | sends an HTTP request with a token only after you approve it and returns only the response status to the agent |
+| 🧾 **One report** | merges findings from all scanners into one list with priority and code location |
+| 🤖 **Agent** | plugs into Claude Code, Codex and Cursor via instructions and MCP; the agent reviews findings and applies reviewed fixes |
 
 ## Install
 
@@ -45,6 +44,6 @@ The repository is private for now, so you need GitHub access. The first run down
 
 ## Docs
 
-[Setup](docs/setup.md) · [Agents & MCP](docs/agents.md) · [Scanners](docs/scanners.md) · [Secrets](docs/secrets.md) · [Safe Input App](docs/safe-input-app.md) · [Validation](docs/validation.md) · [Audit](docs/security-audit.md)
+[Setup](docs/setup.md) · [Agents & MCP](docs/agents.md) · [Scanners](docs/scanners.md) · [Validation](docs/validation.md) · [Audit](docs/security-audit.md)
 
 <sub>MIT · Scanning does not guarantee that there are no vulnerabilities.</sub>

@@ -18,7 +18,7 @@ class AgentInstallTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             created = agents.install(root)
-            self.assertEqual(len(created), 9)
+            self.assertEqual(len(created), 5)
             self.assertTrue((root / "AGENTS.md").is_file())
             self.assertTrue((root / "CLAUDE.md").is_file())
             self.assertTrue((root / ".agents/skills/guardkit/SKILL.md").is_file())
@@ -271,7 +271,7 @@ class SafeFixTests(unittest.TestCase):
             self.assertNotIn(mcp_token, output.getvalue())
             self.assertEqual(len(callback_calls), 1)
             self.assertEqual(messages[0]["result"]["serverInfo"]["name"], "guardkit")
-            self.assertEqual([tool["name"] for tool in messages[1]["result"]["tools"]], ["open_safe_input", "scan", "findings", "propose_safe_fixes", "apply_safe_fixes"])
+            self.assertEqual([tool["name"] for tool in messages[1]["result"]["tools"]], ["scan", "findings", "propose_safe_fixes", "apply_safe_fixes"])
             self.assertEqual((root / ".gitignore").read_text(), f"# {mcp_token}\n")
             self.assertEqual(messages[2]["result"]["structuredContent"]["findings"][0]["id"], "a")
             self.assertEqual(messages[3]["result"]["structuredContent"]["findings"][0]["id"], "a")

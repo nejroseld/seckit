@@ -1,34 +1,5 @@
 # Validation status
 
-## Safe Input App — 2026-10-29
-
-The full Linux run executed 113 tests: 113 passed, 10 skipped, no failures.
-With `GUARDKIT_LIVE_APP_UI=1`, the five Chromium checks of the private form
-also passed. A plugin built with `guardkit plugin` started its bundled server
-under isolated Python and answered `initialize`, `tools/list` (including
-`open_safe_input`) and `resources/list` (`ui://guardkit/safe-input.html`) over
-stdio.
-
-No real MCP Apps host rendered the form, so host registration and display are
-not verified. The native keystore path was tested with a disposable stub, not a
-live Secret Service or macOS Keychain session.
-
-## Safe Input TUI — 2026-10-29
-
-The current Linux run executed 102 tests: 100 passed, two skipped, no failures.
-Real scanner tests were enabled; the skips were authenticated Codex and native
-macOS Keychain. New tests exercised real PTYs for token/login entry and cancel,
-plus the complete CLI/isolated-worker/TTY path with a disposable native-store
-stub. Synthetic credential values did not appear in terminal transcripts or tool
-stdout/stderr, including deliberately reflected output from the store stub.
-The installed wheel also passed headless CLI failure and MCP tool discovery.
-
-Native Linux enrollment was tested with the disposable stub, not a live Secret
-Service session. macOS Security.framework add/update/cleanup paths were tested
-with fakes; this TUI path has not been executed on macOS. Login records enroll
-credentials only and do not implement website authentication. See the
-[Safe Input validation record](../benchmarks/safe-input-validation-latest.json).
-
 ## AI-native refactor — 2026-10-29
 
 The AI-native refactor run executed 80 tests: 78 passed, two skipped, no failures.
@@ -78,9 +49,6 @@ and HTTPS tests, in 40.477 seconds with no skips.
   Some combined runs exited with Codex process errors; an isolated repeat and
   the final complete suite passed.
   External model availability is not required for standalone Guardkit scanning.
-- Live HTTPS tests use a synthetic token and a disposable certificate. They
-  verify authenticated requests, reflected body/header exclusion, blocked
-  redirects, expiry, and revocation. They use a fake store, not a live keychain.
 - A wheel installs in a clean virtual environment and includes both rule files.
   No account, API key, Docker, sudo, or permanent service is needed for scanning.
 
@@ -131,10 +99,3 @@ on Linux, macOS, and Windows, including Linux real-engine acceptance. See the
 [current test and platform evidence](security-audit.md) for scope and remaining
 upstream dependency advisories. Claude Code/Cursor client execution is recorded
 separately from the authenticated Codex smoke test.
-
-The broker does **not** isolate credentials from arbitrary code running as the
-same OS user. That code can invoke the store or inspect the process. Supported
-broker responses contain only HTTP status, not token/body/headers. A strong
-hostile-agent boundary needs a separate OS identity/host and authenticated
-policy-limited transport; Guardkit does not claim to provide that deployment.
-See [secrets](secrets.md).
