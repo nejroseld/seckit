@@ -152,6 +152,11 @@ use GuardKit's scanner to check the relevant finding again.
     return old, cursor
 
 
+def _is_legacy(text: str) -> bool:
+    """Exact old template, also when checked out with CRLF line endings (git autocrlf)."""
+    return text.replace("\r\n", "\n") in _legacy_contents()
+
+
 def _old_name(text: str) -> str:
     """Spell a current template the way releases named Guardkit wrote it."""
     return text.replace("SecKit", "GuardKit").replace("Seckit", "Guardkit").replace("seckit", "guardkit")
@@ -170,7 +175,7 @@ def _replace_managed(existing: str, block: str) -> str:
         if start >= 0 and end >= start:
             end += len(end_marker)
             return existing[:start] + block + existing[end:]
-    if existing in _legacy_contents():
+    if _is_legacy(existing):
         return block + "\n"
     sep = "" if not existing or existing.endswith("\n") else "\n"
     return existing + sep + "\n" + block + "\n"
@@ -210,7 +215,6 @@ def install(root: Path, plan: list[dict[str, Any]] | None = None) -> list[str]:
                (".agents/skills/seckit-audit/SKILL.md", _audit_skill(root)),
                (".claude/skills/seckit-audit/SKILL.md", _audit_skill(root)))
     changed: list[str] = []
-    legacy = _legacy_contents()
     for relative, content in targets:
         target = _safe_target(root, relative)
         if target is None:
@@ -245,7 +249,7 @@ def install(root: Path, plan: list[dict[str, Any]] | None = None) -> list[str]:
             finally:
                 if fd >= 0:
                     os.close(fd)
-            if before in legacy:
+            if _is_legacy(before):
                 updated = content
             elif relative.endswith("seckit.mdc"):
                 updated = _cursor_update(before, root)
@@ -298,7 +302,7 @@ def _strip_block(root: Path, relative: str, markers: tuple[str, str], headers: t
     except (OSError, UnicodeError):
         return False
     start, end = before.find(markers[0]), before.find(markers[1])
-    if before in _legacy_contents():
+    if _is_legacy(before):
         rest = ""
     elif start < 0 or end < start:
         return False

@@ -46,6 +46,15 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in self.root.iterdir()), ["AGENTS.md"])
         self.assertEqual((self.root / "AGENTS.md").read_text(), "# Mine\n")
 
+    def test_crlf_legacy_template_is_recognised(self):
+        old_skill, _ = agents._legacy_contents()
+        skill = self.root / ".claude/skills/seckit/SKILL.md"
+        skill.parent.mkdir(parents=True)
+        skill.write_bytes(old_skill.replace("\n", "\r\n").encode())
+        agents.install(self.root)
+        self.assertTrue(skill.read_text().startswith("---\nname: seckit\n"))
+        self.assertNotIn("guardkit", skill.read_text())
+
     def test_plan_is_empty_after_init(self):
         agents.install(self.root)
         plan = []
@@ -86,7 +95,8 @@ class RootAndCommandTests(unittest.TestCase):
                 self.assertEqual(agents._invocation(Path(tmp)), "seckit")
                 script.write_text("#!/opt/other/venv/bin/python\n")
                 self.assertFalse(agents.command_status()["ours"])
-                self.assertTrue(agents._invocation(Path(tmp)).startswith(sys.executable))
+                self.assertIn(sys.executable, agents._invocation(Path(tmp)))
+                self.assertNotEqual(agents._invocation(Path(tmp)), "seckit")
             with patch("shutil.which", return_value=None):
                 self.assertEqual(agents.command_status(), {"path": None, "ours": False})
 

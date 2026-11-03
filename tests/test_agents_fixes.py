@@ -14,6 +14,12 @@ from seckit import agents, fixes
 
 
 class AgentInstallTests(unittest.TestCase):
+    def setUp(self):
+        # CI installs the package, so `seckit` is on PATH there; these tests cover the fallback.
+        patcher = patch("seckit.agents.command_status", return_value={"path": None, "ours": False})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_installs_project_local_files_and_is_idempotent(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
