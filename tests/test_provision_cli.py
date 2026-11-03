@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from guardkit import cli, provision, reviews
+from bluekit import cli, provision, reviews
 
 class ProvisionTests(unittest.TestCase):
     def test_download_corruption_fails_before_execute(self):
@@ -61,7 +61,7 @@ class CLITests(unittest.TestCase):
             code, out, err = self.run_cli(['init','--root',tmp])
             self.assertEqual(code,0)
             self.assertIn('Next.js',json.loads(out)['stack'])
-            self.assertEqual(set(json.loads(out)['agent_files_created']), {'AGENTS.md', 'CLAUDE.md', '.cursor/rules/guardkit.mdc', '.agents/skills/guardkit/SKILL.md', '.claude/skills/guardkit/SKILL.md', '.agents/skills/guardkit-audit/SKILL.md', '.claude/skills/guardkit-audit/SKILL.md'})
+            self.assertEqual(set(json.loads(out)['agent_files_created']), {'AGENTS.md', 'CLAUDE.md', '.cursor/rules/bluekit.mdc', '.agents/skills/bluekit/SKILL.md', '.claude/skills/bluekit/SKILL.md', '.agents/skills/bluekit-audit/SKILL.md', '.claude/skills/bluekit-audit/SKILL.md'})
             code, out, err = self.run_cli(['init','--root',tmp])
             self.assertEqual(json.loads(out)['agent_files_created'],[])
 
@@ -80,7 +80,7 @@ class CLITests(unittest.TestCase):
         with patch.object(cli, '_scan', return_value={'findings':[], 'errors':[], 'stack':[]}):
             code,out,_=self.run_cli(['scan','--human'])
             self.assertEqual(code,0)
-            self.assertIn('Guardkit',out)
+            self.assertIn('Bluekit',out)
 
     def test_doctor_defaults_to_json_and_supports_human(self):
         with patch.object(provision, 'tools', return_value={'trivy':'/bin/trivy','semgrep':'/bin/semgrep'}):
@@ -89,7 +89,7 @@ class CLITests(unittest.TestCase):
             self.assertIn('tools',json.loads(out))
             code,out,_=self.run_cli(['doctor','--human'])
             self.assertEqual(code,0)
-            self.assertIn('Guardkit',out)
+            self.assertIn('Bluekit',out)
 
     def test_fix_defaults_to_json_proposal_without_prompt_or_project_execution(self):
         with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as cache:
@@ -121,7 +121,7 @@ class CLITests(unittest.TestCase):
             scanner.assert_called_once()
 
     def test_real_module_help_and_doctor(self):
-        proc=subprocess.run([sys.executable,'-m','guardkit','--help'],capture_output=True,text=True)
+        proc=subprocess.run([sys.executable,'-m','bluekit','--help'],capture_output=True,text=True)
         self.assertEqual(proc.returncode,0)
         for command in ['init','scan','fix','doctor','mcp']: self.assertIn(command,proc.stdout)
 
@@ -206,7 +206,7 @@ class ApprovalVerificationTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'link'), 'Hard links unavailable')
     def test_hardlinked_target_cannot_modify_external_file(self):
-        from guardkit import fixes
+        from bluekit import fixes
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp); outside=root/'original'; outside.write_text('USER root\n')
             os.link(outside,root/'Dockerfile')

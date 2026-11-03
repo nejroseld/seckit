@@ -162,7 +162,7 @@ def scan(root: Path, trivy: str, semgrep: str) -> dict[str, Any]:
     root = Path(root).resolve()
     findings: list[dict[str, Any]] = []
     errors: list[str] = []
-    skip = [".git", ".guardkit", "node_modules", ".venv", "venv", "dist", "build", ".next", "vendor"]
+    skip = [".git", ".bluekit", ".guardkit", "node_modules", ".venv", "venv", "dist", "build", ".next", "vendor"]
     trivy_command = [trivy, "fs", "--config", "", "--ignorefile", "", "--secret-config", "",
                      "--format", "json", "--quiet", "--exit-code", "0",
                      "--scanners", "vuln,misconfig,secret"]
@@ -175,7 +175,7 @@ def scan(root: Path, trivy: str, semgrep: str) -> dict[str, Any]:
         errors.extend(_reported_errors(trivy_data, "Trivy"))
     rules = Path(__file__).with_name("rules")
     # Repository-controlled ignore files and inline suppressions must not hide
-    # findings during an audit. Keep exclusions explicit and owned by Guardkit.
+    # findings during an audit. Keep exclusions explicit and owned by Bluekit.
     semgrep_command = [semgrep, "scan", "--config", str(rules), "--json", "--metrics=off",
                        "--disable-version-check", "--no-rewrite-rule-ids", "--disable-nosem",
                        "--no-git-ignore", "--x-ignore-semgrepignore-files", "--quiet"]

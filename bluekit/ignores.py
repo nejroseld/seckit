@@ -1,4 +1,4 @@
-"""Explicit, auditable suppressions kept in `.guardkit/ignore.json`.
+"""Explicit, auditable suppressions kept in `.bluekit/ignore.json`.
 
 Unlike scanner ignore files, suppressed findings are never hidden: they move to
 the report's `suppressed` list together with the stated reason. Every rule
@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-FILE = Path(".guardkit") / "ignore.json"
+FILE = Path(".bluekit") / "ignore.json"
 
 
 def _glob(path: str, pattern: str) -> bool:
@@ -21,9 +21,16 @@ def _glob(path: str, pattern: str) -> bool:
     return fnmatch.fnmatchcase(path, pattern)
 
 
+def _existing(root: Path) -> Path:
+    """Prefer `.bluekit/`, fall back to a not yet migrated `.guardkit/` (the former name)."""
+    target = Path(root) / FILE
+    old = Path(root) / ".guardkit" / FILE.name
+    return old if not target.exists() and not (Path(root) / FILE.parent).exists() and old.is_file() else target
+
+
 def load(root: Path) -> tuple[list[dict[str, str]], list[str]]:
     """Return (valid rules, human-readable problems)."""
-    target = Path(root) / FILE
+    target = _existing(root)
     if target.is_symlink() or not target.is_file():
         return [], []
     try:

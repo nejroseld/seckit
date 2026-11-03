@@ -11,7 +11,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from guardkit import agents, audit, report, supply_chain, triage
+from bluekit import agents, audit, report, supply_chain, triage
 
 
 def write(root: Path, rel: str, text: str) -> Path:
@@ -116,7 +116,7 @@ class SupplyChainTests(unittest.TestCase):
                              "extra-index-url", "unpinned-requirement", "floating-base-image", "curl-pipe-shell",
                              "pwn-request", "script-injection", "unpinned-action"):
                 self.assertTrue(any(r.endswith(expected) for r in rules), expected)
-            self.assertNotIn("guardkit.ci.missing-permissions", rules)
+            self.assertNotIn("bluekit.ci.missing-permissions", rules)
 
     def test_clean_manifests_have_no_findings(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -179,7 +179,7 @@ class McpAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             agents.install(root)
-            self.assertTrue((root / ".claude/skills/guardkit-audit/SKILL.md").is_file())
+            self.assertTrue((root / ".claude/skills/bluekit-audit/SKILL.md").is_file())
             agents.uninstall(root)
             self.assertFalse((root / ".claude").exists())
             self.assertFalse((root / ".agents").exists())

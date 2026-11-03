@@ -8,9 +8,9 @@ import unittest
 from unittest.mock import patch
 from pathlib import Path
 
-from guardkit.detect import detect
-from guardkit.cli import _show
-from guardkit.scanning import _finding, _run, normalize_semgrep, normalize_trivy, scan
+from bluekit.detect import detect
+from bluekit.cli import _show
+from bluekit.scanning import _finding, _run, normalize_semgrep, normalize_trivy, scan
 
 
 class ScanningTests(unittest.TestCase):
@@ -110,7 +110,7 @@ class ScanningTests(unittest.TestCase):
         self.assertEqual(result["findings"], [])
         self.assertEqual(len(result["errors"]), 2)
 
-    @patch("guardkit.scanning.subprocess.run")
+    @patch("bluekit.scanning.subprocess.run")
     def test_scan_requests_explicit_scanners_pruning_and_local_semgrep_rules(self, run):
         run.return_value = subprocess.CompletedProcess([], 0, stdout='{"Results":[]}', stderr="")
         scan(self.root, "trivy", "semgrep")
@@ -122,7 +122,7 @@ class ScanningTests(unittest.TestCase):
         self.assertIn("--no-rewrite-rule-ids", semgrep_command)
         self.assertIn("--disable-version-check", semgrep_command)
 
-    @patch("guardkit.scanning.subprocess.run")
+    @patch("bluekit.scanning.subprocess.run")
     def test_scanner_diagnostic_text_is_not_returned(self, run):
         run.return_value = subprocess.CompletedProcess([], 0,
             stdout=json.dumps({"Results": [], "Errors": [{"Message": "secret=do-not-leak"}]}), stderr="")
@@ -130,7 +130,7 @@ class ScanningTests(unittest.TestCase):
         self.assertIn("Trivy reported 1 scan error(s)", result["errors"])
         self.assertNotIn("do-not-leak", json.dumps(result))
 
-    @patch("guardkit.scanning.subprocess.run")
+    @patch("bluekit.scanning.subprocess.run")
     def test_non_object_json_output_is_rejected_without_echoing_output(self, run):
         run.return_value = subprocess.CompletedProcess([], 0, stdout='["sensitive"]', stderr="")
         payload, error = _run(["scanner"], self.root)
@@ -139,11 +139,11 @@ class ScanningTests(unittest.TestCase):
 
 
     def test_credentialed_cors_is_high_priority_without_being_a_token_exposure(self):
-        finding = _finding("Semgrep", "guardkit.javascript.cors-reflect-credentials", "CORS credentials", "HIGH", "HIGH",
+        finding = _finding("Semgrep", "bluekit.javascript.cors-reflect-credentials", "CORS credentials", "HIGH", "HIGH",
                            "src/app.js", 2, "Review CORS", "impact", "restrict origins", False, "verify", self.root)
         self.assertEqual(finding["priority"], "P1")
 
-    @patch("guardkit.scanning.subprocess.run")
+    @patch("bluekit.scanning.subprocess.run")
     def test_docker_secret_duplicate_retains_both_rules_as_one_exposure(self, run):
         trivy = {"Results": [{"Target": "Dockerfile", "Misconfigurations": [
             {"ID": "DS-0031", "Title": "Secret in ENV", "Severity": "CRITICAL", "CauseMetadata": {"StartLine": 2}}],

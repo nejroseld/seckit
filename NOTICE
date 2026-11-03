@@ -1,6 +1,6 @@
-Guardkit source and original bundled Semgrep rules: FSL-1.1-ALv2, converting to Apache-2.0 two years after each release (see LICENSE).
+Bluekit source and original bundled Semgrep rules: FSL-1.1-ALv2, converting to Apache-2.0 two years after each release (see LICENSE).
 Trivy: Apache-2.0, https://github.com/aquasecurity/trivy/blob/main/LICENSE
 Semgrep Community Edition: LGPL-2.1-or-later, https://github.com/semgrep/semgrep/blob/develop/LICENSE
 Scanner binaries are downloaded from their publishers, not bundled in this distribution.
 Downloaded Python wheels include separately licensed dependencies and retain their metadata.
-The Semgrep community registry uses a separate rules license; Guardkit does not redistribute that registry.
+The Semgrep community registry uses a separate rules license; Bluekit does not redistribute that registry.

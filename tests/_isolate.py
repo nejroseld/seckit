@@ -4,7 +4,7 @@ import os
 import shutil
 import tempfile
 
-if "GUARDKIT_HOME" not in os.environ:
-    _home = tempfile.mkdtemp(prefix="guardkit-test-home-")
-    os.environ["GUARDKIT_HOME"] = _home
+if "BLUEKIT_HOME" not in os.environ:
+    _home = tempfile.mkdtemp(prefix="bluekit-test-home-")
+    os.environ["BLUEKIT_HOME"] = _home
     atexit.register(shutil.rmtree, _home, True)

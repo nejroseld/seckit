@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="guardkit — local security toolkit for coding agents">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="bluekit — local security toolkit for coding agents">
   <rect width="1200" height="300" rx="12" fill="#121212"/>
   <g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace">
-    <text x="80" y="92" font-size="20" fill="#6b6b6b">$ agent + guardkit</text>
-    <text x="76" y="184" font-size="96" font-weight="700" fill="#ededed" textLength="440" lengthAdjust="spacingAndGlyphs">guardkit</text>
+    <text x="80" y="92" font-size="20" fill="#6b6b6b">$ agent + bluekit</text>
+    <text x="76" y="184" font-size="96" font-weight="700" fill="#ededed" textLength="385" lengthAdjust="spacingAndGlyphs">bluekit</text>
     <rect x="528" y="116" width="44" height="72" fill="#ff5a36"/>
     <text x="80" y="238" font-size="22" fill="#9a9a9a">the security toolkit your coding agent works with</text>
     <g font-size="16" fill="#9a9a9a">

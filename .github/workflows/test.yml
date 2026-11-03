@@ -1,4 +1,4 @@
-name: Guardkit checks
+name: Bluekit checks
 on: [push, pull_request]
 permissions:
   contents: read
@@ -17,7 +17,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m pip install .
       - run: python -m unittest discover -s tests -v
-      - run: guardkit --version
+      - run: bluekit --version
   engines:
     runs-on: ubuntu-latest
     steps:
@@ -26,11 +26,11 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install .
-      - run: python -m guardkit init
+      - run: python -m bluekit init
       - run: python benchmarks/acceptance.py
       - run: python -m unittest discover -s tests -p "test_cli_live.py" -v
         env:
-          GUARDKIT_LIVE_SCANNERS: "1"
+          BLUEKIT_LIVE_SCANNERS: "1"
       - run: python -m unittest discover -s tests -p "test_scanning_live.py" -v
         env:
-          GUARDKIT_LIVE_SCANNERS: "1"
+          BLUEKIT_LIVE_SCANNERS: "1"

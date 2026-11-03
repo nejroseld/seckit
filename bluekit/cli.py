@@ -50,7 +50,7 @@ def _show(report: dict, as_json: bool = False) -> int:
         report.update(status=status, exit_code=code)
         print(json.dumps(report, indent=2))
     else:
-        print("Guardkit\n")
+        print("Bluekit\n")
         if report.get("stack"):
             print("Detected: " + ", ".join(report["stack"]) + "\n")
         findings = report.get("findings", [])
@@ -58,8 +58,8 @@ def _show(report: dict, as_json: bool = False) -> int:
         for finding in findings[:20]:
             print(f"  {finding['severity']:8} {_terminal_text(finding['title'])}\n           {_terminal_text(finding['file'])}:{finding['line']}")
         if len(findings) > 20: print(f"  {len(findings) - 20} more; use --json for all findings.")
-        if findings: print("\nRun `guardkit fix` to review available changes.")
-        if report.get("suppressed"): print(f"{len(report['suppressed'])} finding(s) suppressed by .guardkit/ignore.json (listed under `suppressed` in --json).")
+        if findings: print("\nRun `bluekit fix` to review available changes.")
+        if report.get("suppressed"): print(f"{len(report['suppressed'])} finding(s) suppressed by .bluekit/ignore.json (listed under `suppressed` in --json).")
         for warning in report.get("warnings", []): print(f"Warning: {_terminal_text(warning)}", file=sys.stderr)
         for error in report.get("errors", []): print(f"Incomplete check: {error}", file=sys.stderr)
     return code
@@ -109,7 +109,7 @@ def _fix(root: Path, as_json: bool, review_id: str | None = None,
                 print(plan["diff"], end="")
             print("Review only; no project files changed.")
             if review_id:
-                print("Apply reviewed changes: guardkit fix --root " + shlex.quote(str(root)) + " --apply " + review_id)
+                print("Apply reviewed changes: bluekit fix --root " + shlex.quote(str(root)) + " --apply " + review_id)
             for error in result["errors"]:
                 print("Incomplete check: " + _terminal_text(error), file=sys.stderr)
         return 2 if report["errors"] else 0
@@ -158,11 +158,15 @@ def _fail(message: str, as_json: bool, **extra: object) -> int:
 
 def doctor(root: Path) -> dict:
     available = provision.tools(install=False)
+    limitations = ["Scanners require initial downloads; CVE databases require periodic network access."]
+    old_cache = provision.cache_dir().with_name("guardkit")
+    if old_cache.is_dir():
+        limitations.append(f"Scanner cache from Guardkit (the former name) is unused and can be deleted: {old_cache}")
     return {"version": __version__, "python": platform.python_version(), "platform": platform.platform(),
             "cache": str(provision.cache_dir()), "tools": available,
             "expected_versions": {"trivy": provision.TRIVY, "semgrep": provision.SEMGREP},
             "stack": detect(root),
-            "limitations": ["Scanners require initial downloads; CVE databases require periodic network access."]}
+            "limitations": limitations}
 
 
 def _print(value: dict) -> None:
@@ -223,14 +227,14 @@ def _audit_command(ns: argparse.Namespace, root: Path) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    parser = argparse.ArgumentParser(prog="guardkit", description="Security tools for coding agents: scan, review, apply, verify")
+    parser = argparse.ArgumentParser(prog="bluekit", description="Security tools for coding agents: scan, review, apply, verify")
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
     helps = {"surface": "Map entry points, sinks, controls and insecure defaults",
              "supply-chain": "Offline dependency, CI and Dockerfile supply-chain checks",
              "diff": "Security review data for changes against a git base ref",
              "rule": "Run a custom Semgrep rule or pattern (variant analysis)",
-             "triage": "Record a verdict for a finding in .guardkit/triage.json",
+             "triage": "Record a verdict for a finding in .bluekit/triage.json",
              "report": "Full audit report (scan + supply chain + triage) as markdown or SARIF"}
     for command in ("init", "scan", "fix", "doctor", "mcp", "uninstall", *helps):
         cmd = sub.add_parser(command, help=helps.get(command))
@@ -280,23 +284,23 @@ def main(argv: list[str] | None = None) -> int:
             report = doctor(root)
             if ns.json: print(json.dumps(report, indent=2))
             else:
-                print(f"Guardkit {__version__}\nPython {report['python']}\nCache: {report['cache']}")
-                for tool, version in report['expected_versions'].items(): print(f"  {tool} {version}: {'ready' if tool in report['tools'] else 'missing; run guardkit init'}")
+                print(f"Bluekit {__version__}\nPython {report['python']}\nCache: {report['cache']}")
+                for tool, version in report['expected_versions'].items(): print(f"  {tool} {version}: {'ready' if tool in report['tools'] else 'missing; run bluekit init'}")
             return 0 if len(report["tools"]) == 2 else 2
         if ns.command == "init":
             start = time.monotonic()
             installed = provision.tools()
             created = agents.install(root)
-            if ns.mcp and agents.register_mcp(root, sys.executable, ["-I", "-m", "guardkit", "mcp", "--root", str(root)]):
+            if ns.mcp and agents.register_mcp(root, sys.executable, ["-I", "-m", "bluekit", "mcp", "--root", str(root)]):
                 created.append(".mcp.json")
             report = {"stack": detect(root), "tools": installed, "agent_files_created": created,
                       "duration_seconds": round(time.monotonic() - start, 3),
-                      "mcp": {"command": sys.executable, "args": ["-I", "-m", "guardkit", "mcp", "--root", str(root)]},
+                      "mcp": {"command": sys.executable, "args": ["-I", "-m", "bluekit", "mcp", "--root", str(root)]},
                       "mcp_registered": ns.mcp, "next_action": "Use agent instructions to scan, triage, remediate, and verify within task authorization."}
             if ns.json: print(json.dumps(report, indent=2))
             else:
-                print("Guardkit ready\nDetected: " + (", ".join(report["stack"]) or "generic project"))
-                print("Application, dependency, configuration, and secret checks ready.\nRun `guardkit scan`.")
+                print("Bluekit ready\nDetected: " + (", ".join(report["stack"]) or "generic project"))
+                print("Application, dependency, configuration, and secret checks ready.\nRun `bluekit scan`.")
             return 0
         if ns.command == "scan": return _show(_scan(root), ns.json)
         if ns.command in ("surface", "supply-chain", "diff", "rule", "triage", "report"):
@@ -311,7 +315,7 @@ def main(argv: list[str] | None = None) -> int:
         if ns.command == "uninstall":
             # Project files are cleaned; the shared scanner cache is never removed automatically.
             report = {"removed": agents.uninstall(root), "cache": str(provision.cache_dir()),
-                      "instructions": "Removed Guardkit-managed blocks and files from this project; your own content was kept. Uninstall the package with your installer and delete the scanner cache directory manually if no longer needed."}
+                      "instructions": "Removed Bluekit-managed blocks and files from this project; your own content was kept. Uninstall the package with your installer and delete the scanner cache directory manually if no longer needed."}
             if ns.json: print(json.dumps(report, indent=2))
             else: print(report["instructions"] + " Removed: " + (", ".join(report["removed"]) or "nothing") + ". Scanner cache: " + report["cache"])
             return 0
@@ -322,7 +326,7 @@ def main(argv: list[str] | None = None) -> int:
         return _fail(str(exc), getattr(ns, "json", False), error_code="provision")
     except (OSError, ValueError) as exc:
         # Avoid echoing arbitrary exception values which can contain secret-bearing paths.
-        message = f"Operation could not complete ({type(exc).__name__}); run guardkit doctor."
+        message = f"Operation could not complete ({type(exc).__name__}); run bluekit doctor."
         return _fail(message, getattr(ns, "json", False))
     except (EOFError, KeyboardInterrupt):
         print("Cancelled; no further changes applied.", file=sys.stderr)

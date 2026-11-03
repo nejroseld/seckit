@@ -1,9 +1,9 @@
 {
-  "schema": "guardkit.security-dependency-audit.v1",
+  "schema": "bluekit.security-dependency-audit.v1",
   "checked_at_utc": "2026-10-29T09:25:36Z",
   "scope": {
-    "installed_semgrep_environment": "/home/ai/.cache/guardkit/semgrep-1.182.0",
-    "installed_trivy_binary": "/home/ai/.cache/guardkit/trivy-0.76.1/trivy",
+    "installed_semgrep_environment": "/home/ai/.cache/bluekit/semgrep-1.182.0",
+    "installed_trivy_binary": "/home/ai/.cache/bluekit/trivy-0.76.1/trivy",
     "project_manifest": "pyproject.toml",
     "excluded": "Intentional benchmark fixture dependencies; no project runtime dependencies are declared."
   },
@@ -488,7 +488,7 @@
   "limitations": [
     "pip-audit could not be installed in a temporary venv because local package-index DNS/network access failed; no scanner dependency environment was modified.",
     "Trivy scanned a sanitized pip inventory generated from the installed Semgrep venv; it did not inspect the venv tree directly because it found no language-specific lock/manifests there.",
-    "Vulnerability presence is not equivalent to exploitability in Guardkit. MCP findings require affected MCP client/server code paths; OpenTelemetry finding requires vulnerable trace-context parsing to be reached; pip findings require the respective archive/index/install conditions.",
+    "Vulnerability presence is not equivalent to exploitability in Bluekit. MCP findings require affected MCP client/server code paths; OpenTelemetry finding requires vulnerable trace-context parsing to be reached; pip findings require the respective archive/index/install conditions.",
     "The `setuptools>=77` result is a range analysis, not an installed-package finding. A standard online build at the check date resolves latest 84.2.1, but the manifest does not lock that resolution."
   ]
 }

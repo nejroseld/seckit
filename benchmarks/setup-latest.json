@@ -12,5 +12,5 @@
   "tested_environments": 1,
   "manual_project_configuration_steps": 0,
   "database_download_included": false,
-  "note": "Fresh Guardkit/pip cache for optimized install; upstream/OS network caches uncontrolled. Not a population setup-success estimate."
+  "note": "Fresh Bluekit/pip cache for optimized install; upstream/OS network caches uncontrolled. Not a population setup-success estimate."
 }

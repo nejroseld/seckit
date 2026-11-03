@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hero.svg" alt="Guardkit" width="100%">
+  <img src="assets/hero.svg" alt="Bluekit" width="100%">
 </p>
 
 <p align="center">
@@ -14,7 +14,7 @@
   <a href="LICENSE"><img alt="FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-64748b"></a>
 </p>
 
-Guardkit finds vulnerabilities and leaked secrets. Your agent reviews the findings and fixes the code. No API key needed, everything runs locally.
+Bluekit finds vulnerabilities and leaked secrets. Your agent reviews the findings and fixes the code. No API key needed, everything runs locally.
 
 ## What it does
 
@@ -39,10 +39,10 @@ The easiest way is to give your agent the [installation prompt](README.md#уст
 Or install manually (Linux, macOS, WSL):
 
 ```bash
-git clone https://github.com/nejroseld/guardkit.git && cd guardkit
+git clone https://github.com/nejroseld/bluekit.git && cd bluekit
 python3 -m venv .venv && .venv/bin/python -I -m pip install .
-.venv/bin/guardkit init --root /path/to/project
-.venv/bin/guardkit scan --root /path/to/project
+.venv/bin/bluekit init --root /path/to/project
+.venv/bin/bluekit scan --root /path/to/project
 ```
 
 The repository is private for now, so you need GitHub access. The first run downloads scanners and databases.

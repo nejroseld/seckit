@@ -9,8 +9,8 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from guardkit import fixes, provision
-from guardkit.scanning import scan
+from bluekit import fixes, provision
+from bluekit.scanning import scan
 
 
 def main():
@@ -21,12 +21,12 @@ def main():
         print(json.dumps({"status": "blocked", "reason": "Scanner provisioning unavailable", "setup_success": False}))
         return 2
     setup_seconds = time.monotonic() - started
-    rules = ROOT / 'guardkit' / 'rules'
+    rules = ROOT / 'bluekit' / 'rules'
     validate = subprocess.run([engines['semgrep'], 'scan', '--validate', '--config', str(rules), '--metrics=off', '--disable-version-check'], capture_output=True)
     if validate.returncode:
         print(json.dumps({"status": "failed", "reason": "Semgrep rule validation failed", "setup_success": True}))
         return 1
-    with tempfile.TemporaryDirectory(prefix='guardkit-acceptance-') as tmp:
+    with tempfile.TemporaryDirectory(prefix='bluekit-acceptance-') as tmp:
         project = Path(tmp) / 'project'
         shutil.copytree(ROOT / 'benchmarks/fixtures/positive', project)
         # Represent unrelated pre-existing local edits; fixes must preserve exact bytes.

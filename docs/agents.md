@@ -1,25 +1,25 @@
 # Coding agents and MCP
 
-Guardkit is an AI-native security toolkit. The coding agent is the intelligence
+Bluekit is an AI-native security toolkit. The coding agent is the intelligence
 that investigates findings, reasons about project context, and makes ordinary
-code changes within the user's task. Guardkit supplies deterministic local
+code changes within the user's task. Bluekit supplies deterministic local
 scans, normalized findings, and narrowly constrained safe-fix plans. It does
 not bundle an LLM or require an AI API key.
 
-`guardkit init --root PROJECT` installs the project integration as part of
+`bluekit init --root PROJECT` installs the project integration as part of
 initialization. It adds managed additive blocks to `AGENTS.md` and `CLAUDE.md`,
 project skills for Codex and Claude Code, and a Cursor rule with
 `alwaysApply: true`. Existing custom instructions are preserved. Only an exact
-recognized old Guardkit template is eligible for migration; other content is
+recognized old Bluekit template is eligible for migration; other content is
 retained. No global agent configuration is changed. The instructions explain
-how to invoke Guardkit using an isolated Python interpreter and explicit
+how to invoke Bluekit using an isolated Python interpreter and explicit
 absolute project root, and guide the agent to investigate and remediate within
 the user's existing task authority. They do not independently authorize work
 beyond that scope. The agent should report changes and respect that scope; a
 prior task authorization does not require an extra confirmation prompt.
 
 `init` does not change global agent configuration. Its JSON result includes an
-`mcp` descriptor with the command and arguments needed to register Guardkit
+`mcp` descriptor with the command and arguments needed to register Bluekit
 with a client. The agent can present that descriptor for the client's normal
 project-local registration flow. The CLI remains available directly if MCP
 registration is unavailable or not desired.
@@ -27,15 +27,15 @@ registration is unavailable or not desired.
 Generic MCP descriptor shape:
 
 ```json
-{"mcpServers":{"guardkit":{"command":"/absolute/path/to/guardkit","args":["mcp","--root","/absolute/project"]}}}
+{"mcpServers":{"bluekit":{"command":"/absolute/path/to/bluekit","args":["mcp","--root","/absolute/project"]}}}
 ```
 
 For direct CLI bootstrap, use the isolated interpreter and explicit root, for
-example: `/absolute/venv/bin/python -I -m guardkit scan --root /absolute/project --json`.
+example: `/absolute/venv/bin/python -I -m bluekit scan --root /absolute/project --json`.
 
 ## MCP server
 
-`guardkit mcp --root PROJECT` serves `scan`, `findings`,
+`bluekit mcp --root PROJECT` serves `scan`, `findings`,
 `propose_safe_fixes`, and `apply_safe_fixes` over stdio JSON-RPC, plus the
 audit tools and prompts described in [Code audit tools](audit-tools.md). The root is
 fixed at startup. Proposal results include a session-memory `review_id`; it is
@@ -63,7 +63,7 @@ An optional authenticated Codex smoke test uses `--ignore-user-config`,
 does not touch user Codex configuration:
 
 ```sh
-GUARDKIT_LIVE_CODEX=1 python -m unittest discover -s tests -p 'test_agents_live.py' -v
+BLUEKIT_LIVE_CODEX=1 python -m unittest discover -s tests -p 'test_agents_live.py' -v
 ```
 
 See [official Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
@@ -84,15 +84,15 @@ change can affect ownership, writable paths, and capabilities.
 
 ## MCP registration and removal
 
-`guardkit init --root PROJECT --mcp` also writes the `guardkit` server to the
+`bluekit init --root PROJECT --mcp` also writes the `bluekit` server to the
 project-local `.mcp.json` (other servers in the file are kept). Without `--mcp`
-only the descriptor is printed. `guardkit uninstall --root PROJECT` removes the
+only the descriptor is printed. `bluekit uninstall --root PROJECT` removes the
 managed blocks from `AGENTS.md`, `CLAUDE.md`, the Cursor rule and both skills,
 deletes files that contain nothing else, and drops the `.mcp.json` entry; user
 content is kept. The scanner cache is never removed automatically.
 
 The generated instructions contain the interpreter path of the machine that ran
-`init`. After cloning elsewhere, re-run `guardkit init --root .`.
+`init`. After cloning elsewhere, re-run `bluekit init --root .`.
 
 ## MCP `findings` filters
 

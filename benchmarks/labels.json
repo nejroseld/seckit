@@ -3,37 +3,37 @@
   "clean_fixture": "fixtures/clean",
   "expected_rule_matches": [
     {
-      "rule_id": "guardkit.python.subprocess-shell-true",
+      "rule_id": "bluekit.python.subprocess-shell-true",
       "file": "backend.py",
       "line": 5
     },
     {
-      "rule_id": "guardkit.python.sql-injection",
+      "rule_id": "bluekit.python.sql-injection",
       "file": "backend.py",
       "line": 9
     },
     {
-      "rule_id": "guardkit.python.ssrf",
+      "rule_id": "bluekit.python.ssrf",
       "file": "backend.py",
       "line": 12
     },
     {
-      "rule_id": "guardkit.javascript.eval",
+      "rule_id": "bluekit.javascript.eval",
       "file": "frontend.js",
       "line": 2
     },
     {
-      "rule_id": "guardkit.javascript.sql-injection",
+      "rule_id": "bluekit.javascript.sql-injection",
       "file": "frontend.js",
       "line": 6
     },
     {
-      "rule_id": "guardkit.javascript.express-open-redirect",
+      "rule_id": "bluekit.javascript.express-open-redirect",
       "file": "frontend.js",
       "line": 10
     },
     {
-      "rule_id": "guardkit.javascript.cors-reflect-credentials",
+      "rule_id": "bluekit.javascript.cors-reflect-credentials",
       "file": "frontend.js",
       "line": 13
     }

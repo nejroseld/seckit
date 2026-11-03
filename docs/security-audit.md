@@ -18,7 +18,7 @@ from the findings below.
 | Severity | Finding | Fix |
 | --- | --- | --- |
 | High | Semgrep provisioning executed a repository-local `pip.py` through `python -m pip`, before wheel verification. | Both pip download and install now use Python isolated mode: `python -I -m pip`. |
-| Medium | Repository-controlled Semgrep suppressions silently removed findings, weakening audits of untrusted repositories. | Ignore `.semgrepignore`, `.gitignore`, and inline `nosemgrep`; supply Guardkit's generated/dependency directory exclusions explicitly. |
+| Medium | Repository-controlled Semgrep suppressions silently removed findings, weakening audits of untrusted repositories. | Ignore `.semgrepignore`, `.gitignore`, and inline `nosemgrep`; supply Bluekit's generated/dependency directory exclusions explicitly. |
 | Low | Finding paths containing terminal control characters were printed verbatim. | Escape nonprintable characters at the terminal sink, preserving original paths in JSON. |
 
 The High issue requires invoking a command that provisions Semgrep while the
@@ -46,7 +46,7 @@ The regression also covers bidirectional formatting controls and JSON round trip
 
 - `python3 -m unittest discover -s tests -v`: 54 tests, no failures, four skips.
   Skips cover opt-in Codex/scanner tests and unavailable loopback HTTPS binding.
-- `GUARDKIT_LIVE_SCANNERS=1 python3 -m unittest discover -s tests -p 'test_scanning_live.py' -v`:
+- `BLUEKIT_LIVE_SCANNERS=1 python3 -m unittest discover -s tests -p 'test_scanning_live.py' -v`:
   the real Semgrep regression passed, including suppression resistance, generated
   directory exclusions, and terminal escaping. Trivy is stubbed in this test.
 - The local wheel was rebuilt offline from the corrected source and its SHA-256
@@ -73,8 +73,8 @@ The regression also covers bidirectional formatting controls and JSON round trip
 - The initial installed Semgrep environment had **nine dependency advisory findings**:
   four in `mcp==1.29.0`, one in `opentelemetry-api==1.37.0`, and four in
   `pip==26.0.1`. These are dependency inventory findings, not nine demonstrated
-  exploits in Guardkit. Semgrep 1.182.1 still pins the same MCP/OpenTelemetry
-  versions, so an engine patch upgrade alone cannot remove them. Guardkit invokes
+  exploits in Bluekit. Semgrep 1.182.1 still pins the same MCP/OpenTelemetry
+  versions, so an engine patch upgrade alone cannot remove them. Bluekit invokes
   local scans, not the Semgrep MCP HTTP service. See the
   [exact inventory, advisory URLs, and applicability limits](../benchmarks/security-dependencies-latest.json).
 - Verified pip bootstrap now updates both fresh and cached private environments
@@ -89,14 +89,14 @@ The regression also covers bidirectional formatting controls and JSON round trip
 
 This is a source review with targeted reproductions, not an exhaustive proof of
 security. Native Linux, macOS, and Windows CI checks have run in the private
-[GitHub repository](https://github.com/nejroseld/guardkit). The
-[final code workflow](https://github.com/nejroseld/guardkit/actions/runs/40851239433)
+[GitHub repository](https://github.com/nejroseld/bluekit). The
+[final code workflow](https://github.com/nejroseld/bluekit/actions/runs/40851239433)
 passed all four jobs, including the platform matrix, real scanner acceptance,
 and native macOS Keychain check. See [CI evidence](../benchmarks/security-ci-latest.json).
 A disposable Linux
 Secret Service passed the real store/write/read/delete round trip; a separate
 macOS CI test passed native Keychain reads and deletion using a synthetic fixture.
-Cursor Agent CLI also approved the temporary Guardkit MCP server and enumerated
+Cursor Agent CLI also approved the temporary Bluekit MCP server and enumerated
 all three tools using isolated temporary HOME/workspace settings; this verifies
 client discovery, not a model-driven session. See
 [Cursor evidence](../benchmarks/security-cursor-client-latest.json).
@@ -107,7 +107,7 @@ authentication. See [Claude evidence](../benchmarks/security-claude-client-lates
 Interactive macOS enrollment still requires a person at the native prompt and
 was not automated. The standalone Trivy binary was not audited through a complete
 upstream SBOM. These checks do not establish that every upstream dependency
-advisory is exploitable or fully remediated in Guardkit.
+advisory is exploitable or fully remediated in Bluekit.
 
 The broker's repeated requests during a TTL grant are documented behavior and
 were not counted as a vulnerability. Its documented lack of isolation from

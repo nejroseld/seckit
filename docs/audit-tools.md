@@ -1,6 +1,6 @@
 # Code audit tools
 
-Guardkit gives a coding agent the tools for a full blue-team code audit, not
+Bluekit gives a coding agent the tools for a full blue-team code audit, not
 just a scanner run. They follow the workflow of public audit skill sets such as
 [Trail of Bits skills](https://github.com/trailofbits/skills)
 (audit-context-building, differential-review, variant-analysis, fp-check,
@@ -9,7 +9,7 @@ and the tools of the [Semgrep MCP server](https://github.com/semgrep/mcp)
 (custom-rule scans). The implementation is original, offline and stdlib-only;
 nothing executes project code.
 
-`guardkit init` installs a second skill, `guardkit-audit`, into
+`bluekit init` installs a second skill, `bluekit-audit`, into
 `.claude/skills/` and `.agents/skills/`. It contains the audit methodology and
 the exact commands for this machine. The same methodology is served as MCP
 prompts.
@@ -24,7 +24,7 @@ prompts.
 | `rule --pattern P --lang L` or `rule --config FILE` | `rule_scan` | Findings from one agent-written Semgrep rule (variant analysis), with rule syntax errors |
 | | `search_code` | Regex matches with masked snippets |
 | | `read_code` | Numbered file lines, max 500 per call, secret-like assignments masked |
-| `triage ID --verdict V --reason R` | `triage` | Stores `true_positive`, `false_positive`, `needs_info` or `fixed` with a reason in `.guardkit/triage.json` |
+| `triage ID --verdict V --reason R` | `triage` | Stores `true_positive`, `false_positive`, `needs_info` or `fixed` with a reason in `.bluekit/triage.json` |
 | `report --format markdown\|sarif\|json [--output F]` | `audit_report` | Scan + supply-chain findings with triage verdicts; Markdown adds an attack-surface summary, SARIF 2.1.0 suits GitHub code scanning |
 
 MCP prompts: `security_audit`, `differential_review`, `variant_analysis`,
@@ -40,7 +40,7 @@ error. `surface` and `triage` return 0.
   findings. The agent confirms or refutes them by reading the code.
 - `diff` never runs `git diff` against the working tree. Repository-defined
   clean/smudge filters, textconv drivers, external diff tools and fsmonitor
-  hooks could execute code. Guardkit reads trees and blobs with git plumbing
+  hooks could execute code. Bluekit reads trees and blobs with git plumbing
   and compares working files in Python. Base refs that look like options are
   rejected.
 - `read_code` and `search_code` resolve paths inside the root and never follow
@@ -50,6 +50,6 @@ error. `surface` and `triage` return 0.
   suppression flags as `scan`.
 - Triage annotates findings and never hides them. A `false_positive` becomes a
   SARIF suppression with the reason so dashboards show it as reviewed.
-  Suppression in Guardkit's own reports remains `.guardkit/ignore.json`, which
+  Suppression in Bluekit's own reports remains `.bluekit/ignore.json`, which
   only the owner edits.
-- Supply-chain findings honour `.guardkit/ignore.json` like scan findings.
+- Supply-chain findings honour `.bluekit/ignore.json` like scan findings.

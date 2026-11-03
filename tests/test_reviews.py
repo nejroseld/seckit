@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from guardkit import provision, reviews
+from bluekit import provision, reviews
 
 
 class ReviewCacheTests(unittest.TestCase):

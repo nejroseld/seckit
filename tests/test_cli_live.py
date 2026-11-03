@@ -10,17 +10,17 @@ import tempfile
 import unittest
 
 
-@unittest.skipUnless(os.environ.get('GUARDKIT_LIVE_SCANNERS') == '1',
-                     'set GUARDKIT_LIVE_SCANNERS=1 with scanners installed for the real CLI workflow')
+@unittest.skipUnless(os.environ.get('BLUEKIT_LIVE_SCANNERS') == '1',
+                     'set BLUEKIT_LIVE_SCANNERS=1 with scanners installed for the real CLI workflow')
 class LiveCLIApprovalTests(unittest.TestCase):
     def test_dockerfile_proposal_then_apply_is_verified_and_preserves_local_edits(self):
-        with tempfile.TemporaryDirectory(prefix='guardkit-cli-live-') as temp:
+        with tempfile.TemporaryDirectory(prefix='bluekit-cli-live-') as temp:
             root = Path(temp)
             docker = root / 'Dockerfile'
             docker.write_text('FROM alpine:3.20\nUSER root\nHEALTHCHECK CMD ["true"]\nCMD ["true"]\n')
             note = root / 'uncommitted.txt'
             note.write_bytes(b'local work\n')
-            command = [sys.executable, '-m', 'guardkit', 'fix', '--root', temp]
+            command = [sys.executable, '-m', 'bluekit', 'fix', '--root', temp]
             cwd = Path(__file__).resolve().parents[1]
             proposal = subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=120)
             self.assertEqual(proposal.returncode, 0, proposal.stderr)
@@ -38,13 +38,13 @@ class LiveCLIApprovalTests(unittest.TestCase):
             self.assertEqual(note.read_bytes(), b'local work\n')
 
     def test_mcp_proposal_apply_rescans_and_rejects_replay(self):
-        with tempfile.TemporaryDirectory(prefix='guardkit-mcp-live-') as temp:
+        with tempfile.TemporaryDirectory(prefix='bluekit-mcp-live-') as temp:
             root = Path(temp)
             docker = root / 'Dockerfile'
             docker.write_bytes(b'FROM alpine:3.20\r\nUSER root\r\nCMD ["true"]\r\n')
             note = root / 'uncommitted.txt'
             note.write_bytes(b'local work\r\n')
-            process = subprocess.Popen([sys.executable, '-m', 'guardkit', 'mcp', '--root', temp],
+            process = subprocess.Popen([sys.executable, '-m', 'bluekit', 'mcp', '--root', temp],
                                        cwd=Path(__file__).resolve().parents[1], stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
 

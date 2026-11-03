@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from guardkit import agents, cli, fixes, ignores, scanning
+from bluekit import agents, cli, fixes, ignores, scanning
 
 
 def finding(**kw):
@@ -21,13 +21,13 @@ class IgnoreTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        (self.root / ".guardkit").mkdir()
+        (self.root / ".bluekit").mkdir()
 
     def tearDown(self):
         self.tmp.cleanup()
 
     def write(self, data):
-        (self.root / ".guardkit/ignore.json").write_text(json.dumps(data))
+        (self.root / ".bluekit/ignore.json").write_text(json.dumps(data))
 
     def test_suppressed_findings_stay_visible_with_reason(self):
         self.write({"ignore": [{"path": "tests/fixtures/**", "reason": "fixtures"}, {"rule_id": "r2", "reason": "accepted"}]})
@@ -43,7 +43,7 @@ class IgnoreTests(unittest.TestCase):
         self.assertTrue(out["warnings"])
 
     def test_invalid_file_suppresses_nothing(self):
-        (self.root / ".guardkit/ignore.json").write_text("{bad")
+        (self.root / ".bluekit/ignore.json").write_text("{bad")
         out = ignores.apply(self.root, {"findings": [finding()], "errors": []})
         self.assertEqual(len(out["findings"]), 1)
         self.assertTrue(out["warnings"])
@@ -100,8 +100,8 @@ class InstallTests(unittest.TestCase):
             (root / "AGENTS.md").write_text("# mine\n")
             (root / ".mcp.json").write_text(json.dumps({"mcpServers": {"other": {"command": "x"}}}))
             agents.install(root)
-            self.assertEqual(agents.register_mcp(root, "py", ["-m", "guardkit"]), ".mcp.json")
-            self.assertIsNone(agents.register_mcp(root, "py", ["-m", "guardkit"]))
+            self.assertEqual(agents.register_mcp(root, "py", ["-m", "bluekit"]), ".mcp.json")
+            self.assertIsNone(agents.register_mcp(root, "py", ["-m", "bluekit"]))
             removed = agents.uninstall(root)
             self.assertIn("AGENTS.md", removed)
             self.assertEqual((root / "AGENTS.md").read_text(), "# mine\n")
