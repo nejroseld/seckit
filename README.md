@@ -8,6 +8,7 @@
 </p>
 
 <p align="center">
+  <a href="https://pypi.org/project/seckit/"><img alt="PyPI" src="https://img.shields.io/pypi/v/seckit?color=3776ab"></a>
   <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776ab?logo=python&logoColor=white">
   <img alt="Linux · macOS · WSL" src="https://img.shields.io/badge/Linux%20·%20macOS%20·%20WSL-0f172a">
   <img alt="Trivy + Semgrep" src="https://img.shields.io/badge/Trivy%20%2B%20Semgrep-10b981">
@@ -53,7 +54,7 @@ pipx install seckit
 cd /путь/к/проекту && seckit init && seckit scan --human
 ```
 
-Пока пакета нет на PyPI, ставьте из репозитория: `pipx install git+https://github.com/nejroseld/seckit`. Первый запуск скачивает сканеры и базы.
+Первый запуск скачивает сканеры и базы.
 
 ## Документация
 
