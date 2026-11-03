@@ -4,3 +4,5 @@ __pycache__/
 .venv/
 build/
 dist/
+# Local benchmark output (python benchmarks/run.py > ...)
+benchmarks/*latest.json

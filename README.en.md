@@ -58,6 +58,6 @@ The first run downloads scanners and databases.
 
 ## Docs
 
-[Setup](https://github.com/nejroseld/seckit/blob/main/docs/setup.md) · [Agents & MCP](https://github.com/nejroseld/seckit/blob/main/docs/agents.md) · [Scanners](https://github.com/nejroseld/seckit/blob/main/docs/scanners.md) · [Audit tools](https://github.com/nejroseld/seckit/blob/main/docs/audit-tools.md) · [Validation](https://github.com/nejroseld/seckit/blob/main/docs/validation.md) · [Audit](https://github.com/nejroseld/seckit/blob/main/docs/security-audit.md)
+[Setup](https://github.com/nejroseld/seckit/blob/main/docs/setup.md) · [Agents & MCP](https://github.com/nejroseld/seckit/blob/main/docs/agents.md) · [Scanners](https://github.com/nejroseld/seckit/blob/main/docs/scanners.md) · [Audit tools](https://github.com/nejroseld/seckit/blob/main/docs/audit-tools.md)
 
 <sub>FSL-1.1-ALv2 · Scanning does not guarantee that there are no vulnerabilities.</sub>
