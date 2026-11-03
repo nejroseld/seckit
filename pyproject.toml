@@ -4,14 +4,43 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seckit"
-version = "0.1.0"
-description = "Local security scanning for coding agents: secrets, SAST, SCA and IaC in one normalized report"
+dynamic = ["version"]
+description = "Local security toolkit for coding agents: secrets, SAST, SCA, IaC, supply chain and code audit in one report"
+readme = "README.en.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+license = "FSL-1.1-ALv2"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Stefan" }]
+keywords = ["security", "sast", "sca", "secrets", "semgrep", "trivy", "mcp", "claude-code", "codex", "cursor", "ai-agents"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/nejroseld/seckit"
+Documentation = "https://github.com/nejroseld/seckit/tree/main/docs"
+Issues = "https://github.com/nejroseld/seckit/issues"
+Source = "https://github.com/nejroseld/seckit"
 
 [project.scripts]
 seckit = "seckit.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "seckit.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["seckit*"]

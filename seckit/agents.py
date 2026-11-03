@@ -12,7 +12,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Callable
 
-from . import audit, fixes, playbooks, report as reporting, supply_chain, triage
+from . import __version__, audit, fixes, playbooks, report as reporting, supply_chain, triage
 
 
 _BLOCK_START = "<!-- seckit:managed:start -->"
@@ -609,7 +609,7 @@ def serve(root: Path, scan_callback: Callable[[Path], dict[str, Any]],
             if method == "initialize":
                 requested_version = params.get("protocolVersion") if isinstance(params, dict) else None
                 protocol = requested_version if requested_version in {"2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25"} else "2024-11-05"
-                result(message_id, {"protocolVersion": protocol, "capabilities": {"tools": {}, "prompts": {}}, "serverInfo": {"name": "seckit", "version": "0.1.0"}})
+                result(message_id, {"protocolVersion": protocol, "capabilities": {"tools": {}, "prompts": {}}, "serverInfo": {"name": "seckit", "version": __version__}})
             elif method == "resources/list":
                 result(message_id, {"resources": []})
             elif method == "prompts/list":

@@ -1,17 +1,17 @@
 <p align="center">
-  <img src="assets/hero.svg" alt="Seckit" width="100%">
+  <img src="https://raw.githubusercontent.com/nejroseld/seckit/main/assets/hero.svg" alt="Seckit" width="100%">
 </p>
 
 <p align="center">
   <b>Local security checks for your project, built for Claude Code, Codex and Cursor.</b><br>
-  <a href="README.md">Русский</a> · English
+  <a href="https://github.com/nejroseld/seckit/blob/main/README.md">Русский</a> · English
 </p>
 
 <p align="center">
   <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776ab?logo=python&logoColor=white">
   <img alt="Linux · macOS · WSL" src="https://img.shields.io/badge/Linux%20·%20macOS%20·%20WSL-0f172a">
   <img alt="Trivy + Semgrep" src="https://img.shields.io/badge/Trivy%20%2B%20Semgrep-10b981">
-  <a href="LICENSE"><img alt="FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-64748b"></a>
+  <a href="https://github.com/nejroseld/seckit/blob/main/LICENSE"><img alt="FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-64748b"></a>
 </p>
 
 Seckit finds vulnerabilities and leaked secrets. Your agent reviews the findings and fixes the code. No API key needed, everything runs locally.
@@ -57,6 +57,6 @@ Until the package is on PyPI, install from the repository: `pipx install git+htt
 
 ## Docs
 
-[Setup](docs/setup.md) · [Agents & MCP](docs/agents.md) · [Scanners](docs/scanners.md) · [Audit tools](docs/audit-tools.md) · [Validation](docs/validation.md) · [Audit](docs/security-audit.md)
+[Setup](https://github.com/nejroseld/seckit/blob/main/docs/setup.md) · [Agents & MCP](https://github.com/nejroseld/seckit/blob/main/docs/agents.md) · [Scanners](https://github.com/nejroseld/seckit/blob/main/docs/scanners.md) · [Audit tools](https://github.com/nejroseld/seckit/blob/main/docs/audit-tools.md) · [Validation](https://github.com/nejroseld/seckit/blob/main/docs/validation.md) · [Audit](https://github.com/nejroseld/seckit/blob/main/docs/security-audit.md)
 
 <sub>FSL-1.1-ALv2 · Scanning does not guarantee that there are no vulnerabilities.</sub>
