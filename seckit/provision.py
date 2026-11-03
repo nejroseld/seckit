@@ -25,7 +25,7 @@ CHECKSUM_SHA256 = "885debc41b570179e81af560e5f393a66be29b9ff8c52915674f3eb2304c5
 
 def _note(message: str) -> None:
     """Progress goes to stderr so JSON on stdout stays clean."""
-    print(f"bluekit: {message}", file=sys.stderr, flush=True)
+    print(f"seckit: {message}", file=sys.stderr, flush=True)
 
 
 class ProvisionError(RuntimeError):
@@ -36,7 +36,7 @@ def cache_dir() -> Path:
         base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData/Local"))
     else:
         base = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
-    return base / "bluekit"
+    return base / "seckit"
 
 def fetch(url: str) -> bytes:
     if urllib.parse.urlsplit(url).scheme != "https":
@@ -47,7 +47,7 @@ def fetch(url: str) -> bytes:
                 raise ProvisionError("Insecure download redirect")
             return response.read(512 * 1024 * 1024)
     except OSError as exc:
-        raise ProvisionError("Download unavailable. Check network access and run bluekit doctor.") from exc
+        raise ProvisionError("Download unavailable. Check network access and run seckit doctor.") from exc
 
 def verify(data: bytes, digest: str) -> None:
     if hashlib.sha256(data).hexdigest() != digest:
@@ -101,7 +101,7 @@ def _checked(command: list[str]) -> None:
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise ProvisionError("Scanner installation could not complete") from exc
     if proc.returncode:
-        raise ProvisionError("Semgrep installation failed. Python 3.10–3.14 with binary wheels and network access is recommended; run bluekit doctor.")
+        raise ProvisionError("Semgrep installation failed. Python 3.10–3.14 with binary wheels and network access is recommended; run seckit doctor.")
 
 def _pip_version(python: str) -> str | None:
     """Read the venv pip version without allowing the project cwd to shadow it."""

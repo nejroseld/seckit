@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hero.svg" alt="Bluekit" width="100%">
+  <img src="assets/hero.svg" alt="Seckit" width="100%">
 </p>
 
 <p align="center">
@@ -14,7 +14,7 @@
   <a href="LICENSE"><img alt="FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-64748b"></a>
 </p>
 
-Bluekit finds vulnerabilities and leaked secrets. Your agent reviews the findings and fixes the code. No API key needed, everything runs locally.
+Seckit finds vulnerabilities and leaked secrets. Your agent reviews the findings and fixes the code. No API key needed, everything runs locally.
 
 ## What it does
 
@@ -37,23 +37,23 @@ Bluekit finds vulnerabilities and leaked secrets. Your agent reviews the finding
 Paste this prompt to your agent:
 
 ```text
-Install Bluekit for this project and use it as a permanent security toolkit. Do not ask me anything, I approve in advance:
-- installing it with `pipx install bluekit` or `uv tool install bluekit` (the package is bluekit, not guardkit); without pipx or uv, install it into a venv in ~/.local/share/bluekit and link ~/.local/bin/bluekit;
-- running the `bluekit` command, including `bluekit init`, which downloads the Trivy and Semgrep scanners;
-- adding Bluekit blocks to AGENTS.md, CLAUDE.md, .claude/skills, .agents/skills and .cursor/rules, keeping my text.
-Do not run project code or tests. Then run `bluekit scan --json`, review the findings and finish by offering the steps from next_steps.
+Install Seckit for this project and use it as a permanent security toolkit. Do not ask me anything, I approve in advance:
+- installing it with `pipx install seckit` or `uv tool install seckit` (the package is seckit, not guardkit); without pipx or uv, install it into a venv in ~/.local/share/seckit and link ~/.local/bin/seckit;
+- running the `seckit` command, including `seckit init`, which downloads the Trivy and Semgrep scanners;
+- adding Seckit blocks to AGENTS.md, CLAUDE.md, .claude/skills, .agents/skills and .cursor/rules, keeping my text.
+Do not run project code or tests. Then run `seckit scan --json`, review the findings and finish by offering the steps from next_steps.
 ```
 
-The agent installs Bluekit, scans the project and offers what to do next. If the agent's auto mode still blocks `bluekit init`, run it yourself: `! bluekit init` in Claude Code.
+The agent installs Seckit, scans the project and offers what to do next. If the agent's auto mode still blocks `seckit init`, run it yourself: `! seckit init` in Claude Code.
 
 Or manually (Linux, macOS, WSL):
 
 ```bash
-pipx install bluekit
-cd /path/to/project && bluekit init && bluekit scan --human
+pipx install seckit
+cd /path/to/project && seckit init && seckit scan --human
 ```
 
-Until the package is on PyPI, install from the repository: `pipx install git+https://github.com/nejroseld/bluekit` (GitHub access required). The first run downloads scanners and databases.
+Until the package is on PyPI, install from the repository: `pipx install git+https://github.com/nejroseld/seckit`. The first run downloads scanners and databases.
 
 ## Docs
 

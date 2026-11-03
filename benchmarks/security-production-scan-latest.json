@@ -2,7 +2,7 @@
   "findings": [],
   "errors": [],
   "audit_scope": [
-    "bluekit",
+    "seckit",
     ".github",
     "pyproject.toml",
     "README.md",

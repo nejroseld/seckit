@@ -1,4 +1,4 @@
-"""Audit methodology shared by the `bluekit-audit` skill and MCP prompts."""
+"""Audit methodology shared by the `seckit-audit` skill and MCP prompts."""
 from __future__ import annotations
 
 AUDIT = """\
@@ -62,7 +62,7 @@ For every finding answer, with evidence from the code:
 4. What is the concrete impact and who can trigger it?
 Record the result with `triage` (true_positive, false_positive, needs_info,
 fixed) and a reason. Triage never hides findings; only the owner edits
-`.bluekit/ignore.json`.
+`.seckit/ignore.json`.
 
 ## 6. Fix and verify
 - Use `propose_safe_fixes` / `apply_safe_fixes` for supported cases; fix the

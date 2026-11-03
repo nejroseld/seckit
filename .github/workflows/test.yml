@@ -1,4 +1,4 @@
-name: Bluekit checks
+name: Seckit checks
 on: [push, pull_request]
 permissions:
   contents: read
@@ -17,7 +17,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m pip install .
       - run: python -m unittest discover -s tests -v
-      - run: bluekit --version
+      - run: seckit --version
   engines:
     runs-on: ubuntu-latest
     steps:
@@ -26,11 +26,11 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install .
-      - run: python -m bluekit init
+      - run: python -m seckit init
       - run: python benchmarks/acceptance.py
       - run: python -m unittest discover -s tests -p "test_cli_live.py" -v
         env:
-          BLUEKIT_LIVE_SCANNERS: "1"
+          SECKIT_LIVE_SCANNERS: "1"
       - run: python -m unittest discover -s tests -p "test_scanning_live.py" -v
         env:
-          BLUEKIT_LIVE_SCANNERS: "1"
+          SECKIT_LIVE_SCANNERS: "1"

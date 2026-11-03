@@ -1,21 +1,21 @@
 # Coding agents and MCP
 
-Bluekit is an AI-native security toolkit. The coding agent is the intelligence
+Seckit is an AI-native security toolkit. The coding agent is the intelligence
 that investigates findings, reasons about project context, and makes ordinary
-code changes within the user's task. Bluekit supplies deterministic local
+code changes within the user's task. Seckit supplies deterministic local
 scans, normalized findings, and narrowly constrained safe-fix plans. It does
 not bundle an LLM or require an AI API key.
 
-`bluekit init --root PROJECT` installs the project integration as part of
+`seckit init --root PROJECT` installs the project integration as part of
 initialization. It adds managed additive blocks to `AGENTS.md` and `CLAUDE.md`,
 project skills for Codex and Claude Code, and a Cursor rule with
 `alwaysApply: true`. Existing custom instructions are preserved. Only an exact
-recognized old Bluekit template is eligible for migration; other content is
+recognized old Seckit template is eligible for migration; other content is
 retained. No global agent configuration is changed. The instructions call
-plain `bluekit` when the `bluekit` on PATH is this installation (pipx, uv tool,
+plain `seckit` when the `seckit` on PATH is this installation (pipx, uv tool,
 or a venv script linked into PATH), so they contain no machine-specific paths
 and can be committed. Otherwise they fall back to the absolute interpreter,
-`/path/to/python -I -m bluekit`. Commands default to the git top level of the
+`/path/to/python -I -m seckit`. Commands default to the git top level of the
 working directory as the project root, so instructions carry no `--root`. They
 guide the agent to investigate and remediate within
 the user's existing task authority. They do not independently authorize work
@@ -23,7 +23,7 @@ beyond that scope. The agent should report changes and respect that scope; a
 prior task authorization does not require an extra confirmation prompt.
 
 `init` does not change global agent configuration. Its JSON result includes an
-`mcp` descriptor with the command and arguments needed to register Bluekit
+`mcp` descriptor with the command and arguments needed to register Seckit
 with a client. The agent can present that descriptor for the client's normal
 project-local registration flow. The CLI remains available directly if MCP
 registration is unavailable or not desired.
@@ -31,23 +31,23 @@ registration is unavailable or not desired.
 Generic MCP descriptor shape:
 
 ```json
-{"mcpServers":{"bluekit":{"command":"/absolute/path/to/bluekit","args":["mcp","--root","/absolute/project"]}}}
+{"mcpServers":{"seckit":{"command":"/absolute/path/to/seckit","args":["mcp","--root","/absolute/project"]}}}
 ```
 
-Without `bluekit` on PATH, use the isolated interpreter, for example:
-`/absolute/venv/bin/python -I -m bluekit scan --json`, run inside the project.
+Without `seckit` on PATH, use the isolated interpreter, for example:
+`/absolute/venv/bin/python -I -m seckit scan --json`, run inside the project.
 
 ## Agent-run installation
 
 The flow is: the user pastes the installation prompt, the agent installs and
-initialises Bluekit, scans, and offers the next steps.
+initialises Seckit, scans, and offers the next steps.
 
-- `bluekit init --plan --json` writes nothing and does not download scanners.
+- `seckit init --plan --json` writes nothing and does not download scanners.
   It returns `plan` (each file with `action` create/update/delete/rename and a
   unified `diff`), `writes`, `downloads` and `command`. An agent that must
   confirm changes to its own instruction files shows this plan first.
-- `doctor` reports `command`: the `bluekit` found on PATH and `ours`, whether it
-  runs this installation. A different program named `bluekit` on PATH yields a
+- `doctor` reports `command`: the `seckit` found on PATH and `ours`, whether it
+  runs this installation. A different program named `seckit` on PATH yields a
   `fix-path` next step.
 - `init`, `scan` and `doctor` return `next_steps`: up to four ordered items with
   `id`, `title`, `why`, `command` and `writes` (project files the step would
@@ -61,7 +61,7 @@ initialises Bluekit, scans, and offers the next steps.
 
 ## MCP server
 
-`bluekit mcp --root PROJECT` serves `scan`, `findings`,
+`seckit mcp --root PROJECT` serves `scan`, `findings`,
 `propose_safe_fixes`, and `apply_safe_fixes` over stdio JSON-RPC, plus the
 audit tools and prompts described in [Code audit tools](audit-tools.md). The root is
 fixed at startup. Proposal results include a session-memory `review_id`; it is
@@ -89,7 +89,7 @@ An optional authenticated Codex smoke test uses `--ignore-user-config`,
 does not touch user Codex configuration:
 
 ```sh
-BLUEKIT_LIVE_CODEX=1 python -m unittest discover -s tests -p 'test_agents_live.py' -v
+SECKIT_LIVE_CODEX=1 python -m unittest discover -s tests -p 'test_agents_live.py' -v
 ```
 
 See [official Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
@@ -110,16 +110,16 @@ change can affect ownership, writable paths, and capabilities.
 
 ## MCP registration and removal
 
-`bluekit init --root PROJECT --mcp` also writes the `bluekit` server to the
+`seckit init --root PROJECT --mcp` also writes the `seckit` server to the
 project-local `.mcp.json` (other servers in the file are kept). Without `--mcp`
-only the descriptor is printed. `bluekit uninstall --root PROJECT` removes the
+only the descriptor is printed. `seckit uninstall --root PROJECT` removes the
 managed blocks from `AGENTS.md`, `CLAUDE.md`, the Cursor rule and both skills,
 deletes files that contain nothing else, and drops the `.mcp.json` entry; user
 content is kept. The scanner cache is never removed automatically.
 
-When `bluekit` was not on PATH during `init`, the generated instructions contain
+When `seckit` was not on PATH during `init`, the generated instructions contain
 that machine's interpreter path. After installing with pipx or uv, or after
-cloning elsewhere, re-run `bluekit init`.
+cloning elsewhere, re-run `seckit init`.
 
 ## MCP `findings` filters
 

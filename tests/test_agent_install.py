@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from bluekit import agents, cli, nextsteps
+from seckit import agents, cli, nextsteps
 
 
 def run_cli(*args, cwd=None):
@@ -35,14 +35,14 @@ class PlanTests(unittest.TestCase):
 
     def test_plan_writes_nothing_and_lists_diffs(self):
         (self.root / "AGENTS.md").write_text("# Mine\n")
-        with patch("bluekit.provision.tools", side_effect=AssertionError("plan must not download")):
+        with patch("seckit.provision.tools", side_effect=AssertionError("plan must not download")):
             code, out = run_cli("init", "--plan", "--root", str(self.root))
         self.assertEqual(code, 0)
         report = json.loads(out)
         self.assertIn("AGENTS.md", report["writes"])
         agents_entry = next(entry for entry in report["plan"] if entry["file"] == "AGENTS.md")
         self.assertEqual(agents_entry["action"], "update")
-        self.assertIn("+<!-- bluekit:managed:start -->", agents_entry["diff"])
+        self.assertIn("+<!-- seckit:managed:start -->", agents_entry["diff"])
         self.assertEqual(sorted(p.name for p in self.root.iterdir()), ["AGENTS.md"])
         self.assertEqual((self.root / "AGENTS.md").read_text(), "# Mine\n")
 
@@ -60,7 +60,7 @@ class PlanTests(unittest.TestCase):
         agents.install(self.root, plan)
         files = [entry["file"] for entry in plan]
         self.assertEqual(files.count("AGENTS.md"), 1)
-        self.assertIn(".guardkit -> .bluekit", files)
+        self.assertIn(".guardkit -> .seckit", files)
         self.assertTrue((self.root / ".guardkit").is_dir())
 
 
@@ -79,11 +79,11 @@ class RootAndCommandTests(unittest.TestCase):
 
     def test_command_on_path_must_use_this_interpreter(self):
         with tempfile.TemporaryDirectory() as tmp:
-            script = Path(tmp) / "bluekit"
+            script = Path(tmp) / "seckit"
             with patch("shutil.which", return_value=str(script)):
-                script.write_text(f"#!{sys.executable}\nimport bluekit\n")
+                script.write_text(f"#!{sys.executable}\nimport seckit\n")
                 self.assertTrue(agents.command_status()["ours"])
-                self.assertEqual(agents._invocation(Path(tmp)), "bluekit")
+                self.assertEqual(agents._invocation(Path(tmp)), "seckit")
                 script.write_text("#!/opt/other/venv/bin/python\n")
                 self.assertFalse(agents.command_status()["ours"])
                 self.assertTrue(agents._invocation(Path(tmp)).startswith(sys.executable))
@@ -92,14 +92,14 @@ class RootAndCommandTests(unittest.TestCase):
 
     def test_instructions_have_no_machine_paths_when_on_path(self):
         with tempfile.TemporaryDirectory() as tmp, \
-                patch("bluekit.agents.command_status", return_value={"path": "/x/bluekit", "ours": True}):
+                patch("seckit.agents.command_status", return_value={"path": "/x/seckit", "ours": True}):
             root = Path(tmp).resolve()
             agents.install(root)
-            for relative in ("AGENTS.md", ".claude/skills/bluekit-audit/SKILL.md", ".cursor/rules/bluekit.mdc"):
+            for relative in ("AGENTS.md", ".claude/skills/seckit-audit/SKILL.md", ".cursor/rules/seckit.mdc"):
                 text = (root / relative).read_text()
                 self.assertNotIn(str(root), text)
                 self.assertNotIn(sys.executable, text)
-            self.assertIn("`bluekit scan --json`", (root / "AGENTS.md").read_text())
+            self.assertIn("`seckit scan --json`", (root / "AGENTS.md").read_text())
             self.assertIn("next_steps", (root / "AGENTS.md").read_text())
 
 
@@ -125,7 +125,7 @@ class NextStepTests(unittest.TestCase):
         steps = nextsteps.after_scan(self.root, report)
         self.assertEqual(self.ids(steps)[:2], ["fix", "review"])
         self.assertEqual(steps[0]["writes"], [])
-        self.assertEqual(steps[1]["writes"], [".bluekit/triage.json"])
+        self.assertEqual(steps[1]["writes"], [".seckit/triage.json"])
 
     def test_incomplete_scan_starts_with_doctor(self):
         steps = nextsteps.after_scan(self.root, {"findings": [], "errors": ["trivy failed"], "stack": []})
@@ -141,19 +141,19 @@ class NextStepTests(unittest.TestCase):
 
     def test_after_init(self):
         (self.root / ".git").mkdir()
-        steps = nextsteps.after_init(self.root, [], ["AGENTS.md", ".claude/skills/bluekit/SKILL.md"], False, True)
+        steps = nextsteps.after_init(self.root, [], ["AGENTS.md", ".claude/skills/seckit/SKILL.md"], False, True)
         self.assertEqual(self.ids(steps), ["scan", "audit", "commit-agent-files", "mcp"])
         self.assertIn("no machine-specific paths", steps[2]["why"])
         self.assertEqual(steps[2]["command"], "git add .claude AGENTS.md")
 
     def test_doctor_flags_foreign_command_and_missing_tools(self):
-        report = {"command": {"path": "/usr/bin/bluekit", "ours": False},
+        report = {"command": {"path": "/usr/bin/seckit", "ours": False},
                   "expected_versions": {"trivy": "1", "semgrep": "1"}, "tools": {}}
         self.assertEqual(self.ids(nextsteps.after_doctor(report)), ["fix-path", "init"])
 
     def test_scan_json_includes_next_steps(self):
         report = {"findings": [], "errors": [], "stack": []}
-        with patch("bluekit.cli._scan", return_value=report):
+        with patch("seckit.cli._scan", return_value=report):
             code, out = run_cli("scan", "--root", str(self.root))
         self.assertEqual(code, 0)
         self.assertEqual(json.loads(out)["next_steps"][0]["id"], "audit")

@@ -1,7 +1,7 @@
-"""Reviewer verdicts kept in `.bluekit/triage.json`.
+"""Reviewer verdicts kept in `.seckit/triage.json`.
 
 Triage annotates findings; it never hides them. Suppression stays the job of
-`.bluekit/ignore.json`, which only the project owner should edit.
+`.seckit/ignore.json`, which only the project owner should edit.
 """
 from __future__ import annotations
 
@@ -11,12 +11,12 @@ import time
 from pathlib import Path
 from typing import Any
 
-FILE = Path(".bluekit") / "triage.json"
+FILE = Path(".seckit") / "triage.json"
 VERDICTS = ("true_positive", "false_positive", "needs_info", "fixed")
 
 
 def _existing(root: Path) -> Path:
-    """Prefer `.bluekit/`, fall back to a not yet migrated `.guardkit/` (the former name)."""
+    """Prefer `.seckit/`, fall back to a not yet migrated `.guardkit/` (the former name)."""
     target = Path(root) / FILE
     old = Path(root) / ".guardkit" / FILE.name
     return old if not target.exists() and not (Path(root) / FILE.parent).exists() and old.is_file() else target
@@ -45,7 +45,7 @@ def record(root: Path, finding_id: str, verdict: str, reason: str, evidence: str
         raise ValueError("a non-empty reason (max 4000 characters) is required")
     folder = root / FILE.parent
     if folder.is_symlink() or (root / FILE).is_symlink():
-        raise ValueError(".bluekit/triage.json must not be a symlink")
+        raise ValueError(".seckit/triage.json must not be a symlink")
     folder.mkdir(exist_ok=True)
     entries = load(root)
     entry = {"verdict": verdict, "reason": reason.strip(), "updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}

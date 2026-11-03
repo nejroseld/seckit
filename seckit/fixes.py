@@ -12,7 +12,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 
-_MARKER = "# BlueKit: keep local secrets out of version control"
+_MARKER = "# SecKit: keep local secrets out of version control"
 _COMPOSE_PRIVILEGED = re.compile(r"^(\s*privileged\s*:\s*)true(\s*(?:#.*)?\r?\n?)$", re.IGNORECASE)
 _DOCKER_USER_ROOT = re.compile(r"^(\s*USER\s+)(?:root|0)(?::(?:root|0))?(\s*(?:#.*)?\r?\n?)$", re.IGNORECASE)
 _DOCKER_USER_SAFE = re.compile(r"^\s*USER\s+65532:65532\s*(?:#.*)?\r?\n?$", re.IGNORECASE)

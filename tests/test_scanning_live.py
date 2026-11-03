@@ -10,16 +10,16 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from bluekit import provision
-from bluekit.cli import _show
-from bluekit.scanning import _run, scan
+from seckit import provision
+from seckit.cli import _show
+from seckit.scanning import _run, scan
 
 
-@unittest.skipUnless(os.environ.get("BLUEKIT_LIVE_SCANNERS") == "1",
-                     "set BLUEKIT_LIVE_SCANNERS=1 with Semgrep installed")
+@unittest.skipUnless(os.environ.get("SECKIT_LIVE_SCANNERS") == "1",
+                     "set SECKIT_LIVE_SCANNERS=1 with Semgrep installed")
 class LiveSemgrepAuditTests(unittest.TestCase):
     def test_repository_suppressions_cannot_hide_findings(self):
-        with tempfile.TemporaryDirectory(prefix="bluekit-audit-live-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="seckit-audit-live-") as tmp:
             base = Path(tmp)
             root = base / "repo"
             root.mkdir()
@@ -52,7 +52,7 @@ class LiveSemgrepAuditTests(unittest.TestCase):
                 semgrep = provision.tools(install=False).get("semgrep")
             if not semgrep:
                 self.skipTest("Pinned Semgrep is not installed")
-            with patch.dict(os.environ, env), patch("bluekit.scanning._run", side_effect=run):
+            with patch.dict(os.environ, env), patch("seckit.scanning._run", side_effect=run):
                 report = scan(root, "unused-trivy", semgrep)
             self.assertEqual(report["errors"], [])
             paths = {finding["file"] for finding in report["findings"]}

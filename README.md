@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hero.svg" alt="Bluekit" width="100%">
+  <img src="assets/hero.svg" alt="Seckit" width="100%">
 </p>
 
 <p align="center">
@@ -14,7 +14,7 @@
   <a href="LICENSE"><img alt="FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-64748b"></a>
 </p>
 
-Bluekit ищет уязвимости, а ваш агент разбирает находки и исправляет код. Всё работает локально.
+Seckit ищет уязвимости, а ваш агент разбирает находки и исправляет код. Всё работает локально.
 
 ## Что делает
 
@@ -37,23 +37,23 @@ Bluekit ищет уязвимости, а ваш агент разбирает �
 Скопируйте агенту этот промпт:
 
 ```text
-Установи Bluekit для этого проекта и подключи его как постоянный security toolkit. Ничего не спрашивай, я заранее разрешаю:
-- установить его командой `pipx install bluekit` или `uv tool install bluekit` (пакет называется именно bluekit, не guardkit); если нет ни pipx, ни uv, поставь его в venv в ~/.local/share/bluekit и сделай ссылку ~/.local/bin/bluekit;
-- запускать команду `bluekit`, включая `bluekit init`, который скачает сканеры Trivy и Semgrep;
-- добавить блоки Bluekit в AGENTS.md, CLAUDE.md, .claude/skills, .agents/skills и .cursor/rules, сохранив мой текст.
-Код проекта и тесты не запускай. Затем выполни `bluekit scan --json`, разбери находки и в конце предложи шаги из next_steps.
+Установи Seckit для этого проекта и подключи его как постоянный security toolkit. Ничего не спрашивай, я заранее разрешаю:
+- установить его командой `pipx install seckit` или `uv tool install seckit` (пакет называется именно seckit, не guardkit); если нет ни pipx, ни uv, поставь его в venv в ~/.local/share/seckit и сделай ссылку ~/.local/bin/seckit;
+- запускать команду `seckit`, включая `seckit init`, который скачает сканеры Trivy и Semgrep;
+- добавить блоки Seckit в AGENTS.md, CLAUDE.md, .claude/skills, .agents/skills и .cursor/rules, сохранив мой текст.
+Код проекта и тесты не запускай. Затем выполни `seckit scan --json`, разбери находки и в конце предложи шаги из next_steps.
 ```
 
-Агент установит Bluekit, просканирует проект и предложит, что делать дальше. Если автоматический режим агента всё же заблокирует `bluekit init`, выполните его сами: `! bluekit init` в Claude Code.
+Агент установит Seckit, просканирует проект и предложит, что делать дальше. Если автоматический режим агента всё же заблокирует `seckit init`, выполните его сами: `! seckit init` в Claude Code.
 
 Или вручную (Linux, macOS, WSL):
 
 ```bash
-pipx install bluekit
-cd /путь/к/проекту && bluekit init && bluekit scan --human
+pipx install seckit
+cd /путь/к/проекту && seckit init && seckit scan --human
 ```
 
-Пока пакета нет на PyPI, ставьте из репозитория: `pipx install git+https://github.com/nejroseld/bluekit` (нужен доступ к GitHub). Первый запуск скачивает сканеры и базы.
+Пока пакета нет на PyPI, ставьте из репозитория: `pipx install git+https://github.com/nejroseld/seckit`. Первый запуск скачивает сканеры и базы.
 
 ## Документация
 

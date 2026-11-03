@@ -21,7 +21,7 @@
     "recall": 1.0
   },
   "hard_negative_code_findings": 0,
-  "hard_negative_note": "Safe Set-allowlisted redirect; since the sanitizer was added to bluekit.javascript.express-open-redirect it is no longer flagged. Any report here would count as a false positive, not a hidden exclusion.",
+  "hard_negative_note": "Safe Set-allowlisted redirect; since the sanitizer was added to seckit.javascript.express-open-redirect it is no longer flagged. Any report here would count as a false positive, not a hidden exclusion.",
   "scanner_category_recall": {
     "categories": {
       "credential": {

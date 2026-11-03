@@ -24,7 +24,7 @@ def sarif(report: dict[str, Any]) -> dict[str, Any]:
             "message": {"text": str(f.get("title") or rid) + (". " + str(f["explanation"]) if f.get("explanation") and f.get("explanation") != f.get("title") else "")},
             "locations": [{"physicalLocation": {"artifactLocation": {"uri": str(f.get("file") or ""), "uriBaseId": "SRCROOT"},
                                                 "region": {"startLine": max(1, int(f.get("line") or 1))}}}],
-            "partialFingerprints": {"bluekitId/v1": str(f.get("id"))},
+            "partialFingerprints": {"seckitId/v1": str(f.get("id"))},
             "properties": {k: f[k] for k in ("priority", "severity", "confidence", "category", "scanner", "classification") if k in f},
         }
         suppressions = []
@@ -39,7 +39,7 @@ def sarif(report: dict[str, Any]) -> dict[str, Any]:
             result["suppressions"] = suppressions
         results.append(result)
     return {"$schema": "https://json.schemastore.org/sarif-2.1.0.json", "version": "2.1.0",
-            "runs": [{"tool": {"driver": {"name": "Bluekit", "version": __version__, "informationUri": "https://github.com/nejroseld/bluekit",
+            "runs": [{"tool": {"driver": {"name": "Seckit", "version": __version__, "informationUri": "https://github.com/nejroseld/seckit",
                                           "rules": sorted(rules.values(), key=lambda r: r["id"])}},
                       "originalUriBaseIds": {"SRCROOT": {"description": {"text": "Project root"}}},
                       "results": results,
@@ -93,7 +93,7 @@ def markdown(report: dict[str, Any], surface: dict[str, Any] | None = None, titl
                       f"| {r['controls']} | {r['insecure_defaults']} |" for r in top]
             lines.append("")
     lines += ["## Method and limits", "",
-              "Automated checks: Trivy (dependencies, configuration, secrets), Semgrep with Bluekit rules, offline supply-chain and CI checks. "
+              "Automated checks: Trivy (dependencies, configuration, secrets), Semgrep with Seckit rules, offline supply-chain and CI checks. "
               "Rule matches are heuristic until triaged. A clean result does not prove the absence of vulnerabilities; "
               "business logic, authorization design and multi-file data flow need manual review.", ""]
     return "\n".join(lines)

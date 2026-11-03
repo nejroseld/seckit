@@ -18,7 +18,7 @@ from typing import Any, Iterator
 
 from .scanning import _SECRET, _run, normalize_semgrep
 
-SKIP_DIRS = {".git", ".bluekit", ".guardkit", "node_modules", ".venv", "venv", "dist", "build", ".next", "vendor",
+SKIP_DIRS = {".git", ".seckit", ".guardkit", "node_modules", ".venv", "venv", "dist", "build", ".next", "vendor",
              "__pycache__", ".mypy_cache", ".pytest_cache", ".tox", "target", "coverage"}
 MAX_FILE = 1_000_000
 MAX_FILES = 20_000
@@ -422,7 +422,7 @@ def build_rule(pattern: str, language: str, message: str = "", severity: str = "
         raise AuditError("unsupported language; use one of: " + ", ".join(sorted(_LANGS)))
     if severity not in {"INFO", "WARNING", "ERROR"}:
         raise AuditError("severity must be INFO, WARNING or ERROR")
-    rule = {"rules": [{"id": "bluekit.custom.variant", "languages": [language], "severity": severity,
+    rule = {"rules": [{"id": "seckit.custom.variant", "languages": [language], "severity": severity,
                        "message": message or "Variant match for an agent-supplied pattern", "pattern": pattern,
                        "metadata": {"confidence": "MEDIUM"}}]}
     return json.dumps(rule)  # JSON is valid YAML
@@ -434,7 +434,7 @@ def rule_scan(root: Path, semgrep: str, rule: str, path: str = "", timeout: int 
         raise AuditError("rule must be Semgrep YAML with a top-level `rules:` list (max 100 KB)")
     root = Path(root).resolve()
     target = safe_path(root, path, must_exist=True) if path else root
-    with tempfile.TemporaryDirectory(prefix="bluekit-rule-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="seckit-rule-") as tmp:
         config = Path(tmp) / "rule.yaml"
         config.write_text(rule, encoding="utf-8")
         command = [semgrep, "scan", "--config", str(config), "--json", "--metrics=off", "--disable-version-check",

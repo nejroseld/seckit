@@ -2,7 +2,7 @@
   "date": "2026-10-29",
   "scope": "AI-native agent integrations, CLI and MCP proposal/apply workflow",
   "suite": {
-    "command": "BLUEKIT_LIVE_SCANNERS=1 python -m unittest discover -s tests -v",
+    "command": "SECKIT_LIVE_SCANNERS=1 python -m unittest discover -s tests -v",
     "tests": 80,
     "passed": 78,
     "skipped": 2,

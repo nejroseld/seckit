@@ -23,7 +23,7 @@
   "checkout": {
     "git_directory_present": true,
     "remote_url_available": true,
-    "repository_url": "https://github.com/nejroseld/bluekit",
+    "repository_url": "https://github.com/nejroseld/seckit",
     "visibility": "private"
   },
   "hosted_ci": {
@@ -32,7 +32,7 @@
     "workflow_file": ".github/workflows/test.yml",
     "dispatch_attempted": true,
     "trigger": "push to private repository",
-    "run_url": "https://github.com/nejroseld/bluekit/actions/runs/40851239433",
+    "run_url": "https://github.com/nejroseld/seckit/actions/runs/40851239433",
     "tested_commit": "27294018cf854b3b51cd4d664f18d021d3a0ebcf",
     "status": "completed",
     "conclusion": "success",
@@ -60,7 +60,7 @@
     "isolated_dbus_launcher_installed": true,
     "dbus_daemon_installed": true,
     "keyring_daemon_installed": true,
-    "disposable_isolated_session_test": "passed: BlueKit SecretStore put/read/delete in a private dbus-run-session and temporary HOME/XDG directories; synthetic value only; removed after read-back",
+    "disposable_isolated_session_test": "passed: SecKit SecretStore put/read/delete in a private dbus-run-session and temporary HOME/XDG directories; synthetic value only; removed after read-back",
     "dbus_broker_launch_installed": true,
     "rpm_download_attempt": "Fedora 44 dbus-daemon, dbus-tools, gnome-keyring, gcr3, and gcr3-base RPMs extracted under /tmp; no system installation",
     "round_trip_status": "passed",
@@ -73,6 +73,6 @@
     "macos_vm_or_runner_available": false,
     "hosted_native_windows": "passed portable Python 3.12 tests",
     "hosted_native_macos": "passed portable Python 3.12 tests and disposable native Keychain read/delete",
-    "run_url": "https://github.com/nejroseld/bluekit/actions/runs/40851239433"
+    "run_url": "https://github.com/nejroseld/seckit/actions/runs/40851239433"
   }
 }

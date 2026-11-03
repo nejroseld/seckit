@@ -1,5 +1,5 @@
 rules:
-  - id: bluekit.python.subprocess-shell-true
+  - id: seckit.python.subprocess-shell-true
     languages: [python]
     severity: WARNING
     message: subprocess is invoked with shell=True; untrusted input may enable command injection.
@@ -10,7 +10,7 @@ rules:
       impact: An attacker may execute operating-system commands with the application's privileges.
       remediation: Pass an argument list and keep shell=False; validate each argument.
       license: FSL-1.1-ALv2
-  - id: bluekit.python.pickle-load
+  - id: seckit.python.pickle-load
     languages: [python]
     severity: ERROR
     message: Deserializing untrusted data with pickle can execute arbitrary code.
@@ -23,7 +23,7 @@ rules:
       impact: Malicious serialized input may execute code during deserialization.
       remediation: Use a data-only format such as JSON or strictly authenticate trusted serialized data.
       license: FSL-1.1-ALv2
-  - id: bluekit.python.yaml-unsafe-load
+  - id: seckit.python.yaml-unsafe-load
     languages: [python]
     severity: ERROR
     message: yaml.load without a safe loader can construct unsafe Python objects.
@@ -37,7 +37,7 @@ rules:
       impact: Crafted YAML may trigger unsafe object construction.
       remediation: Use yaml.safe_load for untrusted YAML.
       license: FSL-1.1-ALv2
-  - id: bluekit.python.flask-debug
+  - id: seckit.python.flask-debug
     languages: [python]
     severity: WARNING
     message: Flask debug mode should not be enabled in deployed applications.
@@ -48,7 +48,7 @@ rules:
       impact: The interactive debugger can expose sensitive runtime details and execution capabilities.
       remediation: Disable debug mode in deployed environments.
       license: FSL-1.1-ALv2
-  - id: bluekit.python.requests-tls-disabled
+  - id: seckit.python.requests-tls-disabled
     languages: [python]
     severity: WARNING
     message: TLS certificate verification is disabled for an HTTP request.
@@ -59,7 +59,7 @@ rules:
       impact: A network attacker may intercept or alter traffic to the remote service.
       remediation: Enable certificate verification and configure a trusted CA bundle if needed.
       license: FSL-1.1-ALv2
-  - id: bluekit.python.sql-injection
+  - id: seckit.python.sql-injection
     languages: [python]
     mode: taint
     severity: ERROR
@@ -77,7 +77,7 @@ rules:
       impact: An attacker may alter SQL commands and read or modify database records.
       remediation: Use parameterized queries and keep user data in separate bound parameters.
       license: FSL-1.1-ALv2
-  - id: bluekit.python.ssrf
+  - id: seckit.python.ssrf
     languages: [python]
     mode: taint
     severity: WARNING
@@ -97,7 +97,7 @@ rules:
       impact: An attacker may cause server requests to internal or restricted network services.
       remediation: Allowlist destinations and reject private, loopback, and link-local addresses after resolution.
       license: FSL-1.1-ALv2
-  - id: bluekit.python.path-traversal
+  - id: seckit.python.path-traversal
     languages: [python]
     mode: taint
     severity: WARNING
@@ -116,7 +116,7 @@ rules:
       impact: Path manipulation may expose files outside the intended directory.
       remediation: Resolve against a fixed base directory and verify the resolved path remains within it.
       license: FSL-1.1-ALv2
-  - id: bluekit.python.jwt-signature-disabled
+  - id: seckit.python.jwt-signature-disabled
     languages: [python]
     severity: ERROR
     message: JWT signature verification is explicitly disabled.

@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bluekit import agents, ignores
+from seckit import agents, ignores
 
 
 class GuardkitMigrationTests(unittest.TestCase):
@@ -45,11 +45,11 @@ class GuardkitMigrationTests(unittest.TestCase):
         self.assertNotIn("guardkit:managed", (self.root / "CLAUDE.md").read_text())
         for gone in (".claude/skills/guardkit", ".agents/skills/guardkit-audit", ".cursor/rules/guardkit.mdc", ".guardkit"):
             self.assertFalse((self.root / gone).exists(), gone)
-        self.assertTrue((self.root / ".claude/skills/bluekit/SKILL.md").is_file())
-        self.assertTrue((self.root / ".bluekit/ignore.json").is_file())
+        self.assertTrue((self.root / ".claude/skills/seckit/SKILL.md").is_file())
+        self.assertTrue((self.root / ".seckit/ignore.json").is_file())
         servers = json.loads((self.root / ".mcp.json").read_text())["mcpServers"]
-        self.assertEqual(sorted(servers), ["bluekit", "other"])
-        self.assertEqual(servers["bluekit"]["args"][2], "bluekit")
+        self.assertEqual(sorted(servers), ["other", "seckit"])
+        self.assertEqual(servers["seckit"]["args"][2], "seckit")
 
     def test_custom_text_in_old_skill_is_kept(self):
         old = agents._old_name
@@ -63,12 +63,12 @@ class GuardkitMigrationTests(unittest.TestCase):
         agents.install(self.root)
         self.assertEqual(agents.install(self.root), [])
 
-    def test_existing_bluekit_dir_is_not_overwritten(self):
+    def test_existing_seckit_dir_is_not_overwritten(self):
         self.write(".guardkit/ignore.json", "{}")
-        self.write(".bluekit/ignore.json", json.dumps({"ignore": []}))
+        self.write(".seckit/ignore.json", json.dumps({"ignore": []}))
         agents.install(self.root)
         self.assertTrue((self.root / ".guardkit/ignore.json").exists())
-        self.assertEqual(json.loads((self.root / ".bluekit/ignore.json").read_text()), {"ignore": []})
+        self.assertEqual(json.loads((self.root / ".seckit/ignore.json").read_text()), {"ignore": []})
 
     def test_uninstall_removes_old_name_too(self):
         self.old_project()

@@ -11,7 +11,7 @@ Keychain. A new authenticated AI client session was not run for this refactor.
 Real-engine acceptance passed all four scan categories and verified one resolved
 finding. A clean virtual-environment installation also passed: generated agent
 commands ran from the inspected project with isolated Python, an untrusted local
-`bluekit.py` was not executed, repeated initialization changed no files, and
+`seckit.py` was not executed, repeated initialization changed no files, and
 existing CRLF team instructions survived. See the [current validation record](../benchmarks/ai-native-validation-latest.json).
 
 The results below and their linked artifacts are historical checks of earlier
@@ -24,7 +24,7 @@ For the subsequent security review, fixes, and their verification, see the
 Verified on Linux x64, Python 3.14.6, on 2026-10-29. The package is built locally;
 it has not been published to PyPI/npm. Subsequent native macOS and Windows
 Python 3.12 package checks passed in
-[private hosted CI](https://github.com/nejroseld/bluekit/actions/runs/40851239433).
+[hosted CI](https://github.com/nejroseld/seckit/actions/runs/40851239433).
 
 ## Observed results
 
@@ -48,7 +48,7 @@ and HTTPS tests, in 40.477 seconds with no skips.
   through MCP in an ephemeral, read-only session. The fixture was unchanged.
   Some combined runs exited with Codex process errors; an isolated repeat and
   the final complete suite passed.
-  External model availability is not required for standalone Bluekit scanning.
+  External model availability is not required for standalone Seckit scanning.
 - A wheel installs in a clean virtual environment and includes both rule files.
   No account, API key, Docker, sudo, or permanent service is needed for scanning.
 
@@ -80,10 +80,10 @@ comparison also needs an identical database/environment snapshot.
 
 ```sh
 python3 -m unittest discover -s tests -v
-BLUEKIT_LIVE_SCANNERS=1 python3 -m unittest discover -s tests -p 'test_cli_live.py' -v
-BLUEKIT_LIVE_CODEX=1 python3 -m unittest discover -s tests -p 'test_agents_live.py' -v
+SECKIT_LIVE_SCANNERS=1 python3 -m unittest discover -s tests -p 'test_cli_live.py' -v
+SECKIT_LIVE_CODEX=1 python3 -m unittest discover -s tests -p 'test_agents_live.py' -v
 python3 benchmarks/acceptance.py
-python3 benchmarks/run.py --trivy "$HOME/.cache/bluekit/trivy-0.76.1/trivy" --semgrep "$HOME/.cache/bluekit/semgrep-1.182.0/bin/semgrep"
+python3 benchmarks/run.py --trivy "$HOME/.cache/seckit/trivy-0.76.1/trivy" --semgrep "$HOME/.cache/seckit/semgrep-1.182.0/bin/semgrep"
 ```
 
 Codex's optional test requires an existing authenticated Codex session. HTTPS

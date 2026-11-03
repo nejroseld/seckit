@@ -30,7 +30,7 @@ _USES = re.compile(r"^\s*-?\s*uses:\s*['\"]?([^'\"\s#]+)")
 
 def _add(out: list, rule: str, title: str, severity: str, file: str, line: int, why: str, impact: str, fix: str,
          root: Path, category: str = "dependency", identity: str = "") -> None:
-    item = _finding("Bluekit", rule, title, severity, "MEDIUM", file, line, why, impact, fix, False,
+    item = _finding("Seckit", rule, title, severity, "MEDIUM", file, line, why, impact, fix, False,
                     "Re-run supply_chain after the change.", root, finding_category=category, identity=identity)
     # Manifest values (action refs, package specs) look like paths; keep them readable but masked for secrets.
     item.update(title=snippet(title, 300), explanation=snippet(why, 1200), source="supply-chain")
@@ -55,7 +55,7 @@ def _npm(root: Path, rel: str, path: Path, out: list) -> None:
     scripts = data.get("scripts") if isinstance(data.get("scripts"), dict) else {}
     for name in _INSTALL_SCRIPTS:
         if isinstance(scripts.get(name), str):
-            _add(out, "bluekit.supply-chain.npm-install-script", f"package.json defines a `{name}` lifecycle script", "LOW",
+            _add(out, "seckit.supply-chain.npm-install-script", f"package.json defines a `{name}` lifecycle script", "LOW",
                  rel, _line_of(text, f'"{name}"'), f"`npm install` runs `{name}` automatically: {scripts[name][:200]}",
                  "Code runs on every developer machine and CI runner that installs this package.",
                  "Confirm the script is needed and does not download or execute remote code.", root, identity=name)
@@ -68,18 +68,18 @@ def _npm(root: Path, rel: str, path: Path, out: list) -> None:
             deps_total += 1
             spec = str(spec).strip()
             if _URL_SPEC.match(spec) and not spec.startswith("npm:"):
-                _add(out, "bluekit.supply-chain.npm-url-dependency", f"{name} is installed from a URL or git, not the registry", "MEDIUM",
+                _add(out, "seckit.supply-chain.npm-url-dependency", f"{name} is installed from a URL or git, not the registry", "MEDIUM",
                      rel, _line_of(text, f'"{name}"'), f"Spec `{spec[:200]}` bypasses registry integrity and version immutability.",
                      "The referenced code can change without a version bump or be replaced by whoever controls the URL.",
                      "Publish to the registry or pin to an exact commit hash and verify its owner.", root, identity=name)
             elif spec.lower() in _FLOATING:
-                _add(out, "bluekit.supply-chain.npm-floating-version", f"{name} uses a floating version `{spec or '(empty)'}`", "MEDIUM",
+                _add(out, "seckit.supply-chain.npm-floating-version", f"{name} uses a floating version `{spec or '(empty)'}`", "MEDIUM",
                      rel, _line_of(text, f'"{name}"'), "Any future release, including a compromised one, is accepted.",
                      "A malicious publish of this package would be installed automatically.",
                      "Pin a version range and commit a lockfile.", root, identity=name)
     folder = path.parent
     if deps_total and not any((folder / lock).is_file() for lock in ("package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml", "bun.lockb", "bun.lock")):
-        _add(out, "bluekit.supply-chain.missing-lockfile", "Node project has dependencies but no lockfile", "MEDIUM", rel, 0,
+        _add(out, "seckit.supply-chain.missing-lockfile", "Node project has dependencies but no lockfile", "MEDIUM", rel, 0,
              "Without a lockfile, every install can resolve different transitive versions.",
              "Builds are not reproducible and CVE scanning of transitive packages is incomplete.",
              "Commit package-lock.json, yarn.lock or pnpm-lock.yaml.", root)
@@ -96,7 +96,7 @@ def _npm_lock(root: Path, rel: str, path: Path, out: list) -> None:
     scripted = sorted(name.rsplit("node_modules/", 1)[-1] for name, meta in packages.items()
                       if name and isinstance(meta, dict) and meta.get("hasInstallScript"))
     if scripted:
-        _add(out, "bluekit.supply-chain.dependency-install-scripts", f"{len(scripted)} installed package(s) run install scripts", "LOW",
+        _add(out, "seckit.supply-chain.dependency-install-scripts", f"{len(scripted)} installed package(s) run install scripts", "LOW",
              rel, 0, "Packages: " + ", ".join(scripted[:25]) + (" ..." if len(scripted) > 25 else ""),
              "Each listed package executes code during installation.",
              "Review them; consider `npm ci --ignore-scripts` with an explicit allowlist.", root)
@@ -105,11 +105,11 @@ def _npm_lock(root: Path, rel: str, path: Path, out: list) -> None:
             continue
         resolved = str(meta.get("resolved") or "")
         if resolved.startswith("http://"):
-            _add(out, "bluekit.supply-chain.insecure-resolved-url", f"{name.rsplit('node_modules/', 1)[-1]} resolves over plain HTTP", "HIGH",
+            _add(out, "seckit.supply-chain.insecure-resolved-url", f"{name.rsplit('node_modules/', 1)[-1]} resolves over plain HTTP", "HIGH",
                  rel, 0, "The lockfile fetches this package without TLS.", "A network attacker can substitute the package.",
                  "Re-resolve from an HTTPS registry.", root, identity=name)
         elif resolved and not meta.get("integrity") and not meta.get("link") and resolved.startswith("https://"):
-            _add(out, "bluekit.supply-chain.missing-integrity", f"{name.rsplit('node_modules/', 1)[-1]} has no integrity hash", "LOW",
+            _add(out, "seckit.supply-chain.missing-integrity", f"{name.rsplit('node_modules/', 1)[-1]} has no integrity hash", "LOW",
                  rel, 0, "Without `integrity`, npm cannot detect a changed tarball.", "Tampered artifacts may be installed silently.",
                  "Regenerate the lockfile so every remote package has an integrity hash.", root, identity=name)
 
@@ -122,20 +122,20 @@ def _requirements(root: Path, rel: str, path: Path, out: list) -> None:
         if not line or line.startswith("#"):
             continue
         if line.startswith("--extra-index-url"):
-            _add(out, "bluekit.supply-chain.extra-index-url", "pip uses --extra-index-url", "HIGH", rel, number,
+            _add(out, "seckit.supply-chain.extra-index-url", "pip uses --extra-index-url", "HIGH", rel, number,
                  "pip picks the highest version across all indexes, so a public package can shadow a private one.",
                  "Dependency confusion: an attacker publishes your internal package name on PyPI.",
                  "Use a single --index-url that proxies PyPI, or pin with --hash.", root, identity=str(number))
         elif re.match(r"^(?:-i|--index-url)\s+http://", line) or line.startswith("--trusted-host"):
-            _add(out, "bluekit.supply-chain.insecure-index", "pip index without TLS verification", "HIGH", rel, number,
+            _add(out, "seckit.supply-chain.insecure-index", "pip index without TLS verification", "HIGH", rel, number,
                  "Packages are downloaded over HTTP or with certificate checks disabled.",
                  "A network attacker can replace packages.", "Use an HTTPS index and remove --trusted-host.", root, identity=str(number))
         elif re.match(r"^(?:-e\s+)?(?:git\+|hg\+|svn\+|https?://)|\s@\s*(?:git\+|https?://)", line):
-            _add(out, "bluekit.supply-chain.pip-url-dependency", "Requirement installed from a VCS or URL", "MEDIUM", rel, number,
+            _add(out, "seckit.supply-chain.pip-url-dependency", "Requirement installed from a VCS or URL", "MEDIUM", rel, number,
                  f"`{line[:200]}` bypasses PyPI versioning.", "The referenced code can change under the same reference.",
                  "Pin to a commit hash or publish to an index; add --hash where possible.", root, identity=str(number))
         elif not line.startswith("-") and "==" not in line and "@" not in line and not has_hashes:
-            _add(out, "bluekit.supply-chain.unpinned-requirement", f"Unpinned requirement `{line[:80]}`", "LOW", rel, number,
+            _add(out, "seckit.supply-chain.unpinned-requirement", f"Unpinned requirement `{line[:80]}`", "LOW", rel, number,
                  "Without an exact pin or lockfile, each install may pick a new release.",
                  "A compromised or breaking release is installed automatically.",
                  "Pin with == (or use a lockfile such as uv.lock / poetry.lock) and consider --require-hashes.", root, identity=line[:80])
@@ -146,7 +146,7 @@ def _workflow(root: Path, rel: str, path: Path, out: list) -> None:
     lines = text.splitlines()
     triggers_prt = "pull_request_target" in text or re.search(r"^\s*workflow_run\s*:", text, re.M) is not None
     if not re.search(r"^permissions\s*:", text, re.M):
-        _add(out, "bluekit.ci.missing-permissions", "Workflow has no top-level `permissions`", "LOW", rel, 1,
+        _add(out, "seckit.ci.missing-permissions", "Workflow has no top-level `permissions`", "LOW", rel, 1,
              "The GITHUB_TOKEN gets the repository default, often read-write.",
              "A compromised step can push code or tamper with releases.",
              "Add `permissions: contents: read` at the top and grant more per job only where needed.", root, "misconfiguration")
@@ -160,7 +160,7 @@ def _workflow(root: Path, rel: str, path: Path, out: list) -> None:
         elif in_run and stripped and indent <= run_indent:
             in_run = False
         if re.search(r"permissions\s*:\s*write-all", line):
-            _add(out, "bluekit.ci.write-all", "Workflow grants `write-all` permissions", "MEDIUM", rel, number,
+            _add(out, "seckit.ci.write-all", "Workflow grants `write-all` permissions", "MEDIUM", rel, number,
                  "Every step receives a token that can write to the repository.", "Any compromised dependency or action can push code.",
                  "Grant only the scopes each job needs.", root, "misconfiguration", str(number))
         used = _USES.match(line)
@@ -170,24 +170,24 @@ def _workflow(root: Path, rel: str, path: Path, out: list) -> None:
                 version = ref.rsplit("@", 1)[1]
                 if not re.fullmatch(r"[0-9a-f]{40}", version):
                     owner = ref.split("/", 1)[0].lower()
-                    _add(out, "bluekit.ci.unpinned-action", f"Action `{ref[:120]}` is not pinned to a commit SHA",
+                    _add(out, "seckit.ci.unpinned-action", f"Action `{ref[:120]}` is not pinned to a commit SHA",
                          "LOW" if owner in {"actions", "github"} else "MEDIUM", rel, number,
                          "Tags and branches are mutable; the action owner (or an attacker with their access) can change the code.",
                          "A retagged action runs with this workflow's token and secrets.",
                          "Pin to a full 40-character commit SHA and keep the tag in a comment.", root, "misconfiguration", ref)
         if _UNTRUSTED_EVENT.search(line) and (in_run or re.match(r"^-?\s*run\s*:", stripped) or "script:" in line):
-            _add(out, "bluekit.ci.script-injection", "Untrusted event data is expanded inside a shell script", "HIGH", rel, number,
+            _add(out, "seckit.ci.script-injection", "Untrusted event data is expanded inside a shell script", "HIGH", rel, number,
                  "`${{ }}` is substituted before the shell runs, so an issue title or branch name becomes code.",
                  "Anyone who can open an issue or PR can run commands with the workflow's token and secrets.",
                  "Pass the value through `env:` and reference it as \"$VAR\" in the script.", root, "misconfiguration", str(number))
         if triggers_prt and re.search(r"ref\s*:\s*\$\{\{\s*github\.(?:event\.pull_request\.head\.(?:sha|ref)|head_ref)", line):
-            _add(out, "bluekit.ci.pwn-request", "Privileged workflow checks out untrusted pull request code", "CRITICAL", rel, number,
+            _add(out, "seckit.ci.pwn-request", "Privileged workflow checks out untrusted pull request code", "CRITICAL", rel, number,
                  "pull_request_target/workflow_run runs with secrets and a write token, and this step fetches the PR head.",
                  "A fork PR can execute arbitrary code with repository secrets (\"pwn request\").",
                  "Use the `pull_request` trigger for untrusted code, or never build/run the checked-out head in this job.",
                  root, "misconfiguration", str(number))
     if _AGENT_ACTIONS.search(text) and _UNTRUSTED_EVENT.search(text):
-        _add(out, "bluekit.ci.agent-prompt-injection", "AI agent action receives untrusted issue/PR text", "HIGH", rel,
+        _add(out, "seckit.ci.agent-prompt-injection", "AI agent action receives untrusted issue/PR text", "HIGH", rel,
              _line_of(text, "uses:"), "Issue, comment or PR text reaches an AI agent step in the same workflow.",
              "Prompt injection can make the agent leak secrets or push changes with the workflow token.",
              "Restrict triggers to trusted actors, drop write permissions and secrets from that job, and pass untrusted text only as data.",
@@ -204,17 +204,17 @@ def _dockerfile(root: Path, rel: str, path: Path, out: list) -> None:
             if image.lower() != "scratch" and "$" not in image and "@sha256:" not in image:
                 tag = image.rsplit("/", 1)[-1].partition(":")[2]
                 if not tag or tag == "latest":
-                    _add(out, "bluekit.supply-chain.floating-base-image", f"Base image `{image[:100]}` has no fixed tag", "MEDIUM",
+                    _add(out, "seckit.supply-chain.floating-base-image", f"Base image `{image[:100]}` has no fixed tag", "MEDIUM",
                          rel, number, "`latest` or no tag pulls whatever is current at build time.",
                          "Builds are not reproducible and a compromised upstream image is picked up automatically.",
                          "Pin a version tag and preferably an @sha256 digest.", root, "misconfiguration", image)
         if re.search(r"(?i)\b(?:curl|wget)\b[^|;&]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b", stripped):
-            _add(out, "bluekit.supply-chain.curl-pipe-shell", "Remote script is piped into a shell", "HIGH", rel, number,
+            _add(out, "seckit.supply-chain.curl-pipe-shell", "Remote script is piped into a shell", "HIGH", rel, number,
                  "The downloaded script is executed without integrity verification.",
                  "Whoever controls that URL controls the image.", "Download, verify a checksum or signature, then execute.",
                  root, "misconfiguration", str(number))
         if re.match(r"(?i)^ADD\s+https?://", stripped):
-            _add(out, "bluekit.supply-chain.add-remote-url", "ADD fetches a remote URL without verification", "MEDIUM", rel, number,
+            _add(out, "seckit.supply-chain.add-remote-url", "ADD fetches a remote URL without verification", "MEDIUM", rel, number,
                  "ADD downloads at build time with no checksum.", "The fetched content can change between builds.",
                  "Use ADD --checksum=sha256:... or download and verify in RUN.", root, "misconfiguration", str(number))
 

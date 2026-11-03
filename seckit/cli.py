@@ -68,7 +68,7 @@ def _show(report: dict, as_json: bool = False, root: Path | None = None) -> int:
         report.update(status=status, exit_code=code)
         print(json.dumps(report, indent=2))
     else:
-        print("Bluekit\n")
+        print("Seckit\n")
         if report.get("stack"):
             print("Detected: " + ", ".join(report["stack"]) + "\n")
         findings = report.get("findings", [])
@@ -76,8 +76,8 @@ def _show(report: dict, as_json: bool = False, root: Path | None = None) -> int:
         for finding in findings[:20]:
             print(f"  {finding['severity']:8} {_terminal_text(finding['title'])}\n           {_terminal_text(finding['file'])}:{finding['line']}")
         if len(findings) > 20: print(f"  {len(findings) - 20} more; use --json for all findings.")
-        if findings: print("\nRun `bluekit fix` to review available changes.")
-        if report.get("suppressed"): print(f"{len(report['suppressed'])} finding(s) suppressed by .bluekit/ignore.json (listed under `suppressed` in --json).")
+        if findings: print("\nRun `seckit fix` to review available changes.")
+        if report.get("suppressed"): print(f"{len(report['suppressed'])} finding(s) suppressed by .seckit/ignore.json (listed under `suppressed` in --json).")
         for warning in report.get("warnings", []): print(f"Warning: {_terminal_text(warning)}", file=sys.stderr)
         for error in report.get("errors", []): print(f"Incomplete check: {error}", file=sys.stderr)
         _print_steps(report.get("next_steps", []))
@@ -128,7 +128,7 @@ def _fix(root: Path, as_json: bool, review_id: str | None = None,
                 print(plan["diff"], end="")
             print("Review only; no project files changed.")
             if review_id:
-                print("Apply reviewed changes: bluekit fix --root " + shlex.quote(str(root)) + " --apply " + review_id)
+                print("Apply reviewed changes: seckit fix --root " + shlex.quote(str(root)) + " --apply " + review_id)
             for error in result["errors"]:
                 print("Incomplete check: " + _terminal_text(error), file=sys.stderr)
         return 2 if report["errors"] else 0
@@ -248,14 +248,14 @@ def _audit_command(ns: argparse.Namespace, root: Path) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    parser = argparse.ArgumentParser(prog="bluekit", description="Security tools for coding agents: scan, review, apply, verify")
+    parser = argparse.ArgumentParser(prog="seckit", description="Security tools for coding agents: scan, review, apply, verify")
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
     helps = {"surface": "Map entry points, sinks, controls and insecure defaults",
              "supply-chain": "Offline dependency, CI and Dockerfile supply-chain checks",
              "diff": "Security review data for changes against a git base ref",
              "rule": "Run a custom Semgrep rule or pattern (variant analysis)",
-             "triage": "Record a verdict for a finding in .bluekit/triage.json",
+             "triage": "Record a verdict for a finding in .seckit/triage.json",
              "report": "Full audit report (scan + supply chain + triage) as markdown or SARIF"}
     for command in ("init", "scan", "fix", "doctor", "mcp", "uninstall", *helps):
         cmd = sub.add_parser(command, help=helps.get(command))
@@ -306,17 +306,17 @@ def main(argv: list[str] | None = None) -> int:
             report = doctor(root)
             if ns.json: print(json.dumps(report, indent=2))
             else:
-                print(f"Bluekit {__version__}\nPython {report['python']}\nCache: {report['cache']}")
-                for tool, version in report['expected_versions'].items(): print(f"  {tool} {version}: {'ready' if tool in report['tools'] else 'missing; run bluekit init'}")
+                print(f"Seckit {__version__}\nPython {report['python']}\nCache: {report['cache']}")
+                for tool, version in report['expected_versions'].items(): print(f"  {tool} {version}: {'ready' if tool in report['tools'] else 'missing; run seckit init'}")
                 command = report["command"]
-                print("Command: " + (command["path"] + ("" if command["ours"] else " (a different installation)") if command["path"] else "bluekit is not on PATH"))
+                print("Command: " + (command["path"] + ("" if command["ours"] else " (a different installation)") if command["path"] else "seckit is not on PATH"))
                 _print_steps(report["next_steps"])
             return 0 if len(report["tools"]) == 2 else 2
         if ns.command == "init" and ns.plan:
             plan: list[dict] = []
             agents.install(root, plan)
             if ns.mcp:
-                plan.append({"file": ".mcp.json", "action": "update", "diff": "", "note": "register the bluekit MCP server"})
+                plan.append({"file": ".mcp.json", "action": "update", "diff": "", "note": "register the seckit MCP server"})
             report = {"schema_version": 1, "plan": plan, "writes": [entry["file"] for entry in plan],
                       "downloads": [f"Trivy {provision.TRIVY}", f"Semgrep {provision.SEMGREP}"],
                       "command": agents.command_status(),
@@ -326,23 +326,23 @@ def main(argv: list[str] | None = None) -> int:
                 for entry in plan:
                     print(f"{entry['action']}: {entry['file']}")
                     if entry.get("diff"): print(entry["diff"], end="")
-                print("Nothing changed. Run `bluekit init` to apply." if plan else "Agent files are up to date.")
+                print("Nothing changed. Run `seckit init` to apply." if plan else "Agent files are up to date.")
             return 0
         if ns.command == "init":
             start = time.monotonic()
             installed = provision.tools()
             created = agents.install(root)
-            if ns.mcp and agents.register_mcp(root, sys.executable, ["-I", "-m", "bluekit", "mcp", "--root", str(root)]):
+            if ns.mcp and agents.register_mcp(root, sys.executable, ["-I", "-m", "seckit", "mcp", "--root", str(root)]):
                 created.append(".mcp.json")
             report = {"stack": detect(root), "tools": installed, "agent_files_created": created,
                       "duration_seconds": round(time.monotonic() - start, 3),
-                      "mcp": {"command": sys.executable, "args": ["-I", "-m", "bluekit", "mcp", "--root", str(root)]},
+                      "mcp": {"command": sys.executable, "args": ["-I", "-m", "seckit", "mcp", "--root", str(root)]},
                       "mcp_registered": ns.mcp, "command": agents.command_status()}
             report["next_steps"] = nextsteps.after_init(root, report["stack"], created, ns.mcp, report["command"]["ours"])
             report["next_action"] = "Report what was created, then offer next_steps to the user and ask which to start."
             if ns.json: print(json.dumps(report, indent=2))
             else:
-                print("Bluekit ready\nDetected: " + (", ".join(report["stack"]) or "generic project"))
+                print("Seckit ready\nDetected: " + (", ".join(report["stack"]) or "generic project"))
                 print("Application, dependency, configuration, and secret checks ready.")
                 print("Created or updated: " + (", ".join(created) or "nothing"))
                 _print_steps(report["next_steps"])
@@ -360,7 +360,7 @@ def main(argv: list[str] | None = None) -> int:
         if ns.command == "uninstall":
             # Project files are cleaned; the shared scanner cache is never removed automatically.
             report = {"removed": agents.uninstall(root), "cache": str(provision.cache_dir()),
-                      "instructions": "Removed Bluekit-managed blocks and files from this project; your own content was kept. Uninstall the package with your installer and delete the scanner cache directory manually if no longer needed."}
+                      "instructions": "Removed Seckit-managed blocks and files from this project; your own content was kept. Uninstall the package with your installer and delete the scanner cache directory manually if no longer needed."}
             if ns.json: print(json.dumps(report, indent=2))
             else: print(report["instructions"] + " Removed: " + (", ".join(report["removed"]) or "nothing") + ". Scanner cache: " + report["cache"])
             return 0
@@ -371,7 +371,7 @@ def main(argv: list[str] | None = None) -> int:
         return _fail(str(exc), getattr(ns, "json", False), error_code="provision")
     except (OSError, ValueError) as exc:
         # Avoid echoing arbitrary exception values which can contain secret-bearing paths.
-        message = f"Operation could not complete ({type(exc).__name__}); run bluekit doctor."
+        message = f"Operation could not complete ({type(exc).__name__}); run seckit doctor."
         return _fail(message, getattr(ns, "json", False))
     except (EOFError, KeyboardInterrupt):
         print("Cancelled; no further changes applied.", file=sys.stderr)

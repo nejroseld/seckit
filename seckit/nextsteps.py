@@ -22,7 +22,7 @@ def _audit(stack: list[str]) -> dict[str, Any]:
     why = (f"{', '.join(web)} detected: a static scan does not check authorization, input handling or business logic."
            if web else "A static scan only matches known patterns; an audit reads the code that handles untrusted input.")
     return _step("audit", "Full security audit (read-only)", why,
-                 "Use the bluekit-audit skill (starts with `bluekit surface --json`).")
+                 "Use the seckit-audit skill (starts with `seckit surface --json`).")
 
 
 def _supply_chain(root: Path) -> dict[str, Any] | None:
@@ -30,7 +30,7 @@ def _supply_chain(root: Path) -> dict[str, Any] | None:
         return None
     return _step("supply-chain", "Check CI and dependencies for supply-chain risks",
                  "GitHub Actions workflows found: unpinned actions, broad permissions and script injection are common.",
-                 "bluekit supply-chain --json")
+                 "seckit supply-chain --json")
 
 
 def _ordered(steps: list[dict[str, Any] | None]) -> list[dict[str, Any]]:
@@ -44,18 +44,18 @@ def after_scan(root: Path, report: dict[str, Any]) -> list[dict[str, Any]]:
     if report.get("errors"):
         steps.append(_step("doctor", "Find out why some checks did not run",
                            "The scan is incomplete, so a missing finding does not mean the code is clean.",
-                           "bluekit doctor --json"))
+                           "seckit doctor --json"))
     fixable = [f for f in findings if f.get("fix_available")]
     if fixable:
         steps.append(_step("fix", f"Review proposed fixes for {len(fixable)} finding(s)",
-                           "Bluekit has exact diffs for these; reviewing them changes nothing.",
-                           "bluekit fix --check --json",
+                           "Seckit has exact diffs for these; reviewing them changes nothing.",
+                           "seckit fix --check --json",
                            []))
     manual = len(findings) - len(fixable)
     if manual:
         steps.append(_step("review", f"Review {manual} finding(s) without an automatic fix",
                            "Each needs a verdict in context: real issue to fix, or a false positive to record.",
-                           "bluekit triage FINDING_ID --verdict ... --reason '...'", [".bluekit/triage.json"]))
+                           "seckit triage FINDING_ID --verdict ... --reason '...'", [".seckit/triage.json"]))
     steps.append(_audit(stack))
     steps.append(_supply_chain(root))
     return _ordered(steps)
@@ -64,20 +64,20 @@ def after_scan(root: Path, report: dict[str, Any]) -> list[dict[str, Any]]:
 def after_init(root: Path, stack: list[str], created: list[str], mcp_registered: bool, on_path: bool) -> list[dict[str, Any]]:
     steps: list[dict[str, Any] | None] = [
         _step("scan", "Run the first scan", "Code, dependencies, configuration and leaked secrets in one pass.",
-              "bluekit scan --json"),
+              "seckit scan --json"),
         _audit(stack),
     ]
-    agent_files = [path for path in created if not path.startswith(".bluekit") and path != ".mcp.json"]
+    agent_files = [path for path in created if not path.startswith(".seckit") and path != ".mcp.json"]
     if agent_files and (root / ".git").exists():
         steps.append(_step("commit-agent-files", "Decide whether to commit the agent files",
                            "They contain no machine-specific paths, so committing them gives teammates' agents the same setup."
                            if on_path else
-                           "They contain this machine's install path; install Bluekit with pipx or uv first if you want to commit them.",
+                           "They contain this machine's install path; install Seckit with pipx or uv first if you want to commit them.",
                            "git add " + " ".join(sorted({path.split("/", 1)[0] for path in agent_files}))))
     if not mcp_registered:
         steps.append(_step("mcp", "Optional: register the MCP server",
-                           "Only needed if you want Bluekit as MCP tools; the CLI is enough for agents with a shell.",
-                           "bluekit init --mcp", [".mcp.json"]))
+                           "Only needed if you want Seckit as MCP tools; the CLI is enough for agents with a shell.",
+                           "seckit init --mcp", [".mcp.json"]))
     return _ordered(steps)
 
 
@@ -85,12 +85,12 @@ def after_doctor(report: dict[str, Any]) -> list[dict[str, Any]]:
     steps: list[dict[str, Any] | None] = []
     command = report.get("command", {})
     if command.get("path") and not command.get("ours"):
-        steps.append(_step("fix-path", "`bluekit` on PATH is a different installation",
-                           f"{command['path']} does not run this Bluekit; agent instructions would call the wrong program.",
-                           "pipx install --force bluekit"))
+        steps.append(_step("fix-path", "`seckit` on PATH is a different installation",
+                           f"{command['path']} does not run this Seckit; agent instructions would call the wrong program.",
+                           "pipx install --force seckit"))
     if set(report.get("expected_versions", {})) - set(report.get("tools", {})):
         steps.append(_step("init", "Install the scanners", "Trivy or Semgrep is missing, so scans would be incomplete.",
-                           "bluekit init --json"))
+                           "seckit init --json"))
     else:
-        steps.append(_step("scan", "Scan the project", "Scanners are ready.", "bluekit scan --json"))
+        steps.append(_step("scan", "Scan the project", "Scanners are ready.", "seckit scan --json"))
     return _ordered(steps)
