@@ -22,7 +22,8 @@ class AgentInstallTests(unittest.TestCase):
             for audit_skill in (root / ".agents/skills/bluekit-audit/SKILL.md", root / ".claude/skills/bluekit-audit/SKILL.md"):
                 text = audit_skill.read_text()
                 self.assertTrue(text.startswith("---\nname: bluekit-audit\ndescription:"))
-                self.assertIn("surface --root", text)
+                self.assertIn("bluekit surface`", text)
+                self.assertNotIn(str(root.resolve()), text)
                 self.assertIn("Variant analysis", text)
             self.assertTrue((root / "AGENTS.md").is_file())
             self.assertTrue((root / "CLAUDE.md").is_file())
@@ -34,7 +35,8 @@ class AgentInstallTests(unittest.TestCase):
                 self.assertEqual(skill.count("name: bluekit"), 1)
             cursor = (root / ".cursor/rules/bluekit.mdc").read_text()
             self.assertIn("alwaysApply: true", cursor)
-            self.assertIn("-I -m bluekit scan --root", cursor)
+            self.assertIn("-I -m bluekit scan --json", cursor)
+            self.assertNotIn(str(root.resolve()), cursor)
             self.assertEqual(agents.install(root), [])
 
     def test_preserves_existing_content_and_skips_symlinked_path(self):

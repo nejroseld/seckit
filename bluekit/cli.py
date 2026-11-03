@@ -9,7 +9,7 @@ import sys
 import time
 from pathlib import Path
 from . import __version__
-from . import agents, audit, fixes, ignores, provision, reviews, supply_chain, triage
+from . import agents, audit, fixes, ignores, nextsteps, provision, reviews, supply_chain, triage
 from . import report as reporting
 from .detect import detect
 from .scanning import _SECRET, scan
@@ -43,8 +43,26 @@ def _status(report: dict) -> tuple[str, int]:
     return "clean", 0
 
 
-def _show(report: dict, as_json: bool = False) -> int:
+def _default_root() -> Path:
+    """The git top level above the working directory, else the directory itself."""
+    cwd = Path.cwd()
+    for candidate in (cwd, *cwd.parents):
+        if (candidate / ".git").exists():
+            return candidate
+    return cwd
+
+
+def _print_steps(steps: list[dict]) -> None:
+    if steps:
+        print("\nNext steps:")
+        for number, step in enumerate(steps, 1):
+            print(f"  {number}. {step['title']}: {step['command']}")
+
+
+def _show(report: dict, as_json: bool = False, root: Path | None = None) -> int:
     status, code = _status(report)
+    if root is not None:
+        report["next_steps"] = nextsteps.after_scan(root, report)
     if as_json:
         report.setdefault("schema_version", 1)
         report.update(status=status, exit_code=code)
@@ -62,6 +80,7 @@ def _show(report: dict, as_json: bool = False) -> int:
         if report.get("suppressed"): print(f"{len(report['suppressed'])} finding(s) suppressed by .bluekit/ignore.json (listed under `suppressed` in --json).")
         for warning in report.get("warnings", []): print(f"Warning: {_terminal_text(warning)}", file=sys.stderr)
         for error in report.get("errors", []): print(f"Incomplete check: {error}", file=sys.stderr)
+        _print_steps(report.get("next_steps", []))
     return code
 
 
@@ -144,7 +163,7 @@ def _fix(root: Path, as_json: bool, review_id: str | None = None,
     resolved = expected - remaining_ids if not verified["errors"] else set()
     verified["applied_count"] = len(applied)
     verified["fix_verification"] = {"resolved_ids": sorted(resolved), "status": "incomplete" if verified["errors"] else "rescanned"}
-    status = _show(verified, as_json)
+    status = _show(verified, as_json, root)
     return 2 if test_status == "failed" else status
 
 
@@ -162,11 +181,13 @@ def doctor(root: Path) -> dict:
     old_cache = provision.cache_dir().with_name("guardkit")
     if old_cache.is_dir():
         limitations.append(f"Scanner cache from Guardkit (the former name) is unused and can be deleted: {old_cache}")
-    return {"version": __version__, "python": platform.python_version(), "platform": platform.platform(),
-            "cache": str(provision.cache_dir()), "tools": available,
+    report = {"version": __version__, "python": platform.python_version(), "platform": platform.platform(),
+            "command": agents.command_status(), "cache": str(provision.cache_dir()), "tools": available,
             "expected_versions": {"trivy": provision.TRIVY, "semgrep": provision.SEMGREP},
             "stack": detect(root),
             "limitations": limitations}
+    report["next_steps"] = nextsteps.after_doctor(report)
+    return report
 
 
 def _print(value: dict) -> None:
@@ -238,9 +259,10 @@ def main(argv: list[str] | None = None) -> int:
              "report": "Full audit report (scan + supply chain + triage) as markdown or SARIF"}
     for command in ("init", "scan", "fix", "doctor", "mcp", "uninstall", *helps):
         cmd = sub.add_parser(command, help=helps.get(command))
-        cmd.add_argument("--root", type=Path, default=Path.cwd())
+        cmd.add_argument("--root", type=Path, default=None, help="Project root (default: git top level of the working directory)")
         if command == "init":
             cmd.add_argument("--mcp", action="store_true", help="Also register the MCP server in the project-local .mcp.json")
+            cmd.add_argument("--plan", action="store_true", help="Show the files and diffs init would write; change nothing")
         if command != "mcp":
             output = cmd.add_mutually_exclusive_group()
             output.add_argument("--json", dest="json", action="store_true", default=True, help="Structured output (default)")
@@ -275,7 +297,7 @@ def main(argv: list[str] | None = None) -> int:
             cmd.add_argument("--format", choices=["markdown", "sarif", "json"], default="markdown")
             cmd.add_argument("--output", type=Path, help="Write the report to this file instead of stdout")
     ns = parser.parse_args(argv)
-    root = ns.root.resolve()
+    root = (ns.root if ns.root is not None else _default_root()).resolve()
     if not root.is_dir():
         message = "--root must be a directory, not a file." if root.exists() else "Project directory does not exist."
         return _fail(message, getattr(ns, "json", False))
@@ -286,7 +308,26 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(f"Bluekit {__version__}\nPython {report['python']}\nCache: {report['cache']}")
                 for tool, version in report['expected_versions'].items(): print(f"  {tool} {version}: {'ready' if tool in report['tools'] else 'missing; run bluekit init'}")
+                command = report["command"]
+                print("Command: " + (command["path"] + ("" if command["ours"] else " (a different installation)") if command["path"] else "bluekit is not on PATH"))
+                _print_steps(report["next_steps"])
             return 0 if len(report["tools"]) == 2 else 2
+        if ns.command == "init" and ns.plan:
+            plan: list[dict] = []
+            agents.install(root, plan)
+            if ns.mcp:
+                plan.append({"file": ".mcp.json", "action": "update", "diff": "", "note": "register the bluekit MCP server"})
+            report = {"schema_version": 1, "plan": plan, "writes": [entry["file"] for entry in plan],
+                      "downloads": [f"Trivy {provision.TRIVY}", f"Semgrep {provision.SEMGREP}"],
+                      "command": agents.command_status(),
+                      "next_action": "Show the user this plan; run the same command without --plan to apply it."}
+            if ns.json: print(json.dumps(report, indent=2))
+            else:
+                for entry in plan:
+                    print(f"{entry['action']}: {entry['file']}")
+                    if entry.get("diff"): print(entry["diff"], end="")
+                print("Nothing changed. Run `bluekit init` to apply." if plan else "Agent files are up to date.")
+            return 0
         if ns.command == "init":
             start = time.monotonic()
             installed = provision.tools()
@@ -296,13 +337,17 @@ def main(argv: list[str] | None = None) -> int:
             report = {"stack": detect(root), "tools": installed, "agent_files_created": created,
                       "duration_seconds": round(time.monotonic() - start, 3),
                       "mcp": {"command": sys.executable, "args": ["-I", "-m", "bluekit", "mcp", "--root", str(root)]},
-                      "mcp_registered": ns.mcp, "next_action": "Use agent instructions to scan, triage, remediate, and verify within task authorization."}
+                      "mcp_registered": ns.mcp, "command": agents.command_status()}
+            report["next_steps"] = nextsteps.after_init(root, report["stack"], created, ns.mcp, report["command"]["ours"])
+            report["next_action"] = "Report what was created, then offer next_steps to the user and ask which to start."
             if ns.json: print(json.dumps(report, indent=2))
             else:
                 print("Bluekit ready\nDetected: " + (", ".join(report["stack"]) or "generic project"))
-                print("Application, dependency, configuration, and secret checks ready.\nRun `bluekit scan`.")
+                print("Application, dependency, configuration, and secret checks ready.")
+                print("Created or updated: " + (", ".join(created) or "nothing"))
+                _print_steps(report["next_steps"])
             return 0
-        if ns.command == "scan": return _show(_scan(root), ns.json)
+        if ns.command == "scan": return _show(_scan(root), ns.json, root)
         if ns.command in ("surface", "supply-chain", "diff", "rule", "triage", "report"):
             return _audit_command(ns, root)
         if ns.command == "fix":

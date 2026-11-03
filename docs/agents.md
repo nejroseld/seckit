@@ -11,9 +11,13 @@ initialization. It adds managed additive blocks to `AGENTS.md` and `CLAUDE.md`,
 project skills for Codex and Claude Code, and a Cursor rule with
 `alwaysApply: true`. Existing custom instructions are preserved. Only an exact
 recognized old Bluekit template is eligible for migration; other content is
-retained. No global agent configuration is changed. The instructions explain
-how to invoke Bluekit using an isolated Python interpreter and explicit
-absolute project root, and guide the agent to investigate and remediate within
+retained. No global agent configuration is changed. The instructions call
+plain `bluekit` when the `bluekit` on PATH is this installation (pipx, uv tool,
+or a venv script linked into PATH), so they contain no machine-specific paths
+and can be committed. Otherwise they fall back to the absolute interpreter,
+`/path/to/python -I -m bluekit`. Commands default to the git top level of the
+working directory as the project root, so instructions carry no `--root`. They
+guide the agent to investigate and remediate within
 the user's existing task authority. They do not independently authorize work
 beyond that scope. The agent should report changes and respect that scope; a
 prior task authorization does not require an extra confirmation prompt.
@@ -30,8 +34,30 @@ Generic MCP descriptor shape:
 {"mcpServers":{"bluekit":{"command":"/absolute/path/to/bluekit","args":["mcp","--root","/absolute/project"]}}}
 ```
 
-For direct CLI bootstrap, use the isolated interpreter and explicit root, for
-example: `/absolute/venv/bin/python -I -m bluekit scan --root /absolute/project --json`.
+Without `bluekit` on PATH, use the isolated interpreter, for example:
+`/absolute/venv/bin/python -I -m bluekit scan --json`, run inside the project.
+
+## Agent-run installation
+
+The flow is: the user pastes the installation prompt, the agent installs and
+initialises Bluekit, scans, and offers the next steps.
+
+- `bluekit init --plan --json` writes nothing and does not download scanners.
+  It returns `plan` (each file with `action` create/update/delete/rename and a
+  unified `diff`), `writes`, `downloads` and `command`. An agent that must
+  confirm changes to its own instruction files shows this plan first.
+- `doctor` reports `command`: the `bluekit` found on PATH and `ours`, whether it
+  runs this installation. A different program named `bluekit` on PATH yields a
+  `fix-path` next step.
+- `init`, `scan` and `doctor` return `next_steps`: up to four ordered items with
+  `id`, `title`, `why`, `command` and `writes` (project files the step would
+  change; empty means read-only). Clean scans suggest a full audit, tailored to
+  the detected stack, and a supply-chain check when GitHub Actions workflows
+  exist; findings come first as `fix` (reviewable diffs) and `review` (manual
+  triage); incomplete scans start with `doctor`. After `init` the steps are the
+  first scan, the audit, whether to commit the agent files, and optional MCP.
+  The managed instructions tell the agent to offer the first two to four steps
+  and ask which to start. `--human` prints them as a numbered list.
 
 ## MCP server
 
@@ -91,8 +117,9 @@ managed blocks from `AGENTS.md`, `CLAUDE.md`, the Cursor rule and both skills,
 deletes files that contain nothing else, and drops the `.mcp.json` entry; user
 content is kept. The scanner cache is never removed automatically.
 
-The generated instructions contain the interpreter path of the machine that ran
-`init`. After cloning elsewhere, re-run `bluekit init --root .`.
+When `bluekit` was not on PATH during `init`, the generated instructions contain
+that machine's interpreter path. After installing with pipx or uv, or after
+cloning elsewhere, re-run `bluekit init`.
 
 ## MCP `findings` filters
 

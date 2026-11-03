@@ -34,18 +34,26 @@ Bluekit finds vulnerabilities and leaked secrets. Your agent reviews the finding
 
 ## Install
 
-The easiest way is to give your agent the [installation prompt](README.md#установка) from the Russian README.
+Paste this prompt to your agent:
 
-Or install manually (Linux, macOS, WSL):
-
-```bash
-git clone https://github.com/nejroseld/bluekit.git && cd bluekit
-python3 -m venv .venv && .venv/bin/python -I -m pip install .
-.venv/bin/bluekit init --root /path/to/project
-.venv/bin/bluekit scan --root /path/to/project
+```text
+Install Bluekit for this project and use it as a permanent security toolkit. Do not ask me anything, I approve in advance:
+- installing it with `pipx install bluekit` or `uv tool install bluekit` (the package is bluekit, not guardkit); without pipx or uv, install it into a venv in ~/.local/share/bluekit and link ~/.local/bin/bluekit;
+- running the `bluekit` command, including `bluekit init`, which downloads the Trivy and Semgrep scanners;
+- adding Bluekit blocks to AGENTS.md, CLAUDE.md, .claude/skills, .agents/skills and .cursor/rules, keeping my text.
+Do not run project code or tests. Then run `bluekit scan --json`, review the findings and finish by offering the steps from next_steps.
 ```
 
-The repository is private for now, so you need GitHub access. The first run downloads scanners and databases.
+The agent installs Bluekit, scans the project and offers what to do next. If the agent's auto mode still blocks `bluekit init`, run it yourself: `! bluekit init` in Claude Code.
+
+Or manually (Linux, macOS, WSL):
+
+```bash
+pipx install bluekit
+cd /path/to/project && bluekit init && bluekit scan --human
+```
+
+Until the package is on PyPI, install from the repository: `pipx install git+https://github.com/nejroseld/bluekit` (GitHub access required). The first run downloads scanners and databases.
 
 ## Docs
 
