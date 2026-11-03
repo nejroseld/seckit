@@ -183,7 +183,7 @@ class ApprovalVerificationTests(unittest.TestCase):
 
     def test_explicit_run_tests_only_after_apply_and_check_alias(self):
         with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as cache:
-            root=Path(tmp); docker=root/'Dockerfile'; docker.write_text('FROM alpine\nUSER root\n')
+            root=Path(tmp).resolve(); docker=root/'Dockerfile'; docker.write_text('FROM alpine\nUSER root\n')
             finding={'id':'root-user','rule_id':'DS002','file':'Dockerfile','line':2}
             with patch.object(reviews,'_directory',return_value=Path(cache)), patch.object(cli,'_scan',side_effect=[
                 {'findings':[finding],'errors':[]}, {'findings':[],'errors':[]}]), patch.object(cli,'_project_tests',return_value=['fake-test']) as test_command, \
