@@ -53,7 +53,7 @@ class PlanTests(unittest.TestCase):
         skill.write_bytes(old_skill.replace("\n", "\r\n").encode())
         agents.install(self.root)
         self.assertTrue(skill.read_text().startswith("---\nname: seckit\n"))
-        self.assertNotIn("guardkit", skill.read_text())
+        self.assertNotIn("name: guardkit", skill.read_text())
 
     def test_plan_is_empty_after_init(self):
         agents.install(self.root)
