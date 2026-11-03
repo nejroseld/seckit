@@ -18,7 +18,12 @@ class AgentInstallTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             created = agents.install(root)
-            self.assertEqual(len(created), 5)
+            self.assertEqual(len(created), 7)
+            for audit_skill in (root / ".agents/skills/guardkit-audit/SKILL.md", root / ".claude/skills/guardkit-audit/SKILL.md"):
+                text = audit_skill.read_text()
+                self.assertTrue(text.startswith("---\nname: guardkit-audit\ndescription:"))
+                self.assertIn("surface --root", text)
+                self.assertIn("Variant analysis", text)
             self.assertTrue((root / "AGENTS.md").is_file())
             self.assertTrue((root / "CLAUDE.md").is_file())
             self.assertTrue((root / ".agents/skills/guardkit/SKILL.md").is_file())
@@ -40,7 +45,8 @@ class AgentInstallTests(unittest.TestCase):
             keep.write_text("team instructions\n")
             (root / ".claude").symlink_to(external, target_is_directory=True)
             created = agents.install(root)
-            self.assertEqual(created, ["AGENTS.md", "CLAUDE.md", ".cursor/rules/guardkit.mdc", ".agents/skills/guardkit/SKILL.md"])
+            self.assertEqual(created, ["AGENTS.md", "CLAUDE.md", ".cursor/rules/guardkit.mdc", ".agents/skills/guardkit/SKILL.md",
+                                       ".agents/skills/guardkit-audit/SKILL.md"])
             self.assertIn("team instructions\n", keep.read_text())
             self.assertIn("<!-- guardkit:managed:start -->", keep.read_text())
             self.assertFalse((external / "skills/guardkit/SKILL.md").exists())
@@ -271,7 +277,8 @@ class SafeFixTests(unittest.TestCase):
             self.assertNotIn(mcp_token, output.getvalue())
             self.assertEqual(len(callback_calls), 1)
             self.assertEqual(messages[0]["result"]["serverInfo"]["name"], "guardkit")
-            self.assertEqual([tool["name"] for tool in messages[1]["result"]["tools"]], ["scan", "findings", "propose_safe_fixes", "apply_safe_fixes"])
+            self.assertEqual([tool["name"] for tool in messages[1]["result"]["tools"]], ["scan", "findings", "propose_safe_fixes", "apply_safe_fixes",
+                              "attack_surface", "supply_chain", "diff_review", "rule_scan", "search_code", "read_code", "triage", "audit_report"])
             self.assertEqual((root / ".gitignore").read_text(), f"# {mcp_token}\n")
             self.assertEqual(messages[2]["result"]["structuredContent"]["findings"][0]["id"], "a")
             self.assertEqual(messages[3]["result"]["structuredContent"]["findings"][0]["id"], "a")

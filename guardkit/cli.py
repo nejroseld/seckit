@@ -9,7 +9,8 @@ import sys
 import time
 from pathlib import Path
 from . import __version__
-from . import agents, fixes, ignores, provision, reviews
+from . import agents, audit, fixes, ignores, provision, reviews, supply_chain, triage
+from . import report as reporting
 from .detect import detect
 from .scanning import _SECRET, scan
 
@@ -23,7 +24,7 @@ def scanning_redact_lines(text: str) -> str:
 def _scan(root: Path) -> dict:
     start = time.monotonic()
     executables = provision.tools()
-    report = ignores.apply(root, scan(root, **executables))
+    report = triage.annotate(root, ignores.apply(root, scan(root, **executables)))
     automatic_ids = {fid for plan in fixes.propose(root, report["findings"]) for fid in plan["finding_ids"]}
     for finding in report["findings"]:
         finding["fix_available"] = finding["id"] in automatic_ids
@@ -164,13 +165,75 @@ def doctor(root: Path) -> dict:
             "limitations": ["Scanners require initial downloads; CVE databases require periodic network access."]}
 
 
+def _print(value: dict) -> None:
+    print(json.dumps(value, indent=2, ensure_ascii=False))
+
+
+def _audit_command(ns: argparse.Namespace, root: Path) -> int:
+    try:
+        if ns.command == "surface":
+            _print(audit.attack_surface(root, ns.path, ns.kind, max(1, ns.limit)))
+            return 0
+        if ns.command == "supply-chain":
+            report = triage.annotate(root, supply_chain.scan(root))
+            report["schema_version"] = 1
+            return _show(report, ns.json)
+        if ns.command == "diff":
+            report = None if ns.no_scan else _scan(root)
+            result = audit.diff_review(root, ns.base, report)
+            _print(result)
+            if report is not None and report.get("errors"):
+                return 2
+            return 1 if result["new_risky_lines"] or result["removed_controls"] or result.get("findings_in_changed_files") else 0
+        if ns.command == "rule":
+            if ns.config is not None:
+                if not ns.config.is_file() or ns.config.stat().st_size > 100_000:
+                    return _fail("--config must be a rule file under 100 KB.", True, error_code="usage")
+                rule = ns.config.read_text(encoding="utf-8")
+            else:
+                rule = audit.build_rule(ns.pattern, ns.lang, ns.message)
+            result = audit.rule_scan(root, provision.tools()["semgrep"], rule, ns.path)
+            _print({"schema_version": 1, **result})
+            return 2 if result["errors"] else 1 if result["findings"] else 0
+        if ns.command == "triage":
+            _print({"recorded": triage.record(root, ns.finding_id, ns.verdict, ns.reason, ns.evidence)})
+            return 0
+        if ns.command == "report":
+            report = agents.combined_report(root, _scan(root))
+            if ns.format == "sarif":
+                text = json.dumps(reporting.sarif(report), indent=2, ensure_ascii=False)
+            elif ns.format == "json":
+                text = json.dumps({"schema_version": 1, **report}, indent=2, ensure_ascii=False)
+            else:
+                text = reporting.markdown(report, audit.attack_surface(root, limit=1))
+            if ns.output:
+                ns.output.write_text(text + "\n", encoding="utf-8")
+                print(json.dumps({"written": str(ns.output), "findings": len(report["findings"]), "errors": report["errors"]}))
+            else:
+                print(text)
+            return _status(report)[1]
+    except audit.AuditError as exc:
+        return _fail(str(exc), True, error_code="usage")
+    except ValueError as exc:
+        if ns.command == "triage":
+            return _fail(str(exc), True, error_code="usage")
+        raise
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = argparse.ArgumentParser(prog="guardkit", description="Security tools for coding agents: scan, review, apply, verify")
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for command in ("init", "scan", "fix", "doctor", "mcp", "uninstall"):
-        cmd = sub.add_parser(command)
+    helps = {"surface": "Map entry points, sinks, controls and insecure defaults",
+             "supply-chain": "Offline dependency, CI and Dockerfile supply-chain checks",
+             "diff": "Security review data for changes against a git base ref",
+             "rule": "Run a custom Semgrep rule or pattern (variant analysis)",
+             "triage": "Record a verdict for a finding in .guardkit/triage.json",
+             "report": "Full audit report (scan + supply chain + triage) as markdown or SARIF"}
+    for command in ("init", "scan", "fix", "doctor", "mcp", "uninstall", *helps):
+        cmd = sub.add_parser(command, help=helps.get(command))
         cmd.add_argument("--root", type=Path, default=Path.cwd())
         if command == "init":
             cmd.add_argument("--mcp", action="store_true", help="Also register the MCP server in the project-local .mcp.json")
@@ -185,6 +248,28 @@ def main(argv: list[str] | None = None) -> int:
             tests = cmd.add_mutually_exclusive_group()
             tests.add_argument("--run-tests", action="store_true", help="Explicitly authorize project test execution after applying")
             tests.add_argument("--skip-tests", action="store_true", help=argparse.SUPPRESS)
+        if command == "surface":
+            cmd.add_argument("--path", default="")
+            cmd.add_argument("--kind", choices=["entry_points", "sinks", "controls", "insecure_defaults"])
+            cmd.add_argument("--limit", type=int, default=200)
+        if command == "diff":
+            cmd.add_argument("--base", default="HEAD", help="Git ref to compare against (default: uncommitted changes)")
+            cmd.add_argument("--no-scan", action="store_true", help="Skip scanners; report diff signals only")
+        if command == "rule":
+            source = cmd.add_mutually_exclusive_group(required=True)
+            source.add_argument("--config", type=Path, help="Semgrep rule YAML file")
+            source.add_argument("--pattern", help="Semgrep pattern")
+            cmd.add_argument("--lang", default="python")
+            cmd.add_argument("--message", default="")
+            cmd.add_argument("--path", default="")
+        if command == "triage":
+            cmd.add_argument("finding_id")
+            cmd.add_argument("--verdict", required=True, choices=list(triage.VERDICTS))
+            cmd.add_argument("--reason", required=True)
+            cmd.add_argument("--evidence", default="")
+        if command == "report":
+            cmd.add_argument("--format", choices=["markdown", "sarif", "json"], default="markdown")
+            cmd.add_argument("--output", type=Path, help="Write the report to this file instead of stdout")
     ns = parser.parse_args(argv)
     root = ns.root.resolve()
     if not root.is_dir():
@@ -214,12 +299,14 @@ def main(argv: list[str] | None = None) -> int:
                 print("Application, dependency, configuration, and secret checks ready.\nRun `guardkit scan`.")
             return 0
         if ns.command == "scan": return _show(_scan(root), ns.json)
+        if ns.command in ("surface", "supply-chain", "diff", "rule", "triage", "report"):
+            return _audit_command(ns, root)
         if ns.command == "fix":
             if ns.run_tests and not ns.apply:
                 return _fail("--run-tests requires --apply REVIEW_ID.", ns.json, error_code="usage")
             return _fix(root, ns.json, ns.apply, ns.run_tests)
         if ns.command == "mcp":
-            agents.serve(root, lambda target: _scan(target))
+            agents.serve(root, lambda target: _scan(target), lambda: provision.tools()["semgrep"])
             return 0
         if ns.command == "uninstall":
             # Project files are cleaned; the shared scanner cache is never removed automatically.
