@@ -151,6 +151,9 @@ rules:
       - pattern: $REQ.query.$FIELD
       - pattern: $REQ.params[$KEY]
       - pattern: $REQ.body[$KEY]
+    pattern-sanitizers:
+      - pattern: "$ALLOWED.has($URL) ? $URL : $DEFAULT"
+      - pattern: "$ALLOWED.includes($URL) ? $URL : $DEFAULT"
     pattern-sinks:
       - pattern: $RES.redirect($URL)
     metadata:

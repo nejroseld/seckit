@@ -28,3 +28,9 @@ Trivy is invoked with repository config, ignore, and secret-rule files disabled;
 ## Migrating an existing installation
 
 Reinstall the updated package in its trusted virtual environment and rerun `init --root PROJECT`. Exact legacy Guardkit templates are migrated; custom instructions are retained alongside managed blocks. The former `init --no-agents` option is removed. JSON is now the default; use `--human` when reading terminal output. Replace interactive `fix` automation with the proposal `review_id` followed by `fix --apply REVIEW_ID`. CLI review IDs last one hour and are single-use; MCP review IDs last only for the server session.
+
+Scanners are downloaded on first use; progress lines are written to stderr
+(`guardkit: downloading Trivy …`), stdout stays valid JSON. A cold first scan
+takes about a minute. Running the repository's own tests needs the package on
+the path (`pip install -e .` or `PYTHONPATH=.`); `python -I` hides the working
+directory.

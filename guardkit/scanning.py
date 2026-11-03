@@ -63,6 +63,18 @@ def _finding(scanner: str, rule_id: str, title: str, severity: Any, confidence: 
     }
 
 
+def _dependency_title(pkg: str, title: str) -> str:
+    """Prefix the package once; Trivy titles often already start with it."""
+    title = str(title)
+    while title.lower().startswith(pkg.lower() + ":"):
+        title = title[len(pkg) + 1:].lstrip()
+    # Titles like "nodejs-lodash: ..." name the package differently; drop that prefix too.
+    head, sep, rest = title.partition(": ")
+    if sep and pkg.lower() in head.lower() and " " not in head:
+        title = rest
+    return f"{pkg}: {title}"
+
+
 def normalize_trivy(data: dict[str, Any], root: Path) -> list[dict[str, Any]]:
     findings = []
     for result in data.get("Results") or []:
@@ -71,13 +83,15 @@ def normalize_trivy(data: dict[str, Any], root: Path) -> list[dict[str, Any]]:
             pkg = vuln.get("PkgName", "dependency")
             vid = vuln.get("VulnerabilityID", "TRIVY-UNKNOWN")
             fixed = vuln.get("FixedVersion")
-            findings.append(_finding("Trivy", vid, f"{pkg}: {vuln.get('Title') or vid}", vuln.get("Severity"), "HIGH",
+            findings.append(_finding("Trivy", vid, _dependency_title(pkg, vuln.get("Title") or vid), vuln.get("Severity"), "HIGH",
                 target, 0, vuln.get("Description") or vuln.get("Title"),
                 f"Affected dependency {pkg} may expose the application to a known vulnerability.",
                 f"Upgrade {pkg} to {fixed}." if fixed else f"Review {pkg} and select a patched version.", False,
                 "Confirm the resolved package version in the lockfile and rerun the scan.", root,
                 finding_category="dependency",
                 identity=f"{pkg}@{vuln.get('InstalledVersion', '')}"))
+            findings[-1].update(package=_redact(pkg), installed_version=_redact(vuln.get("InstalledVersion")),
+                                fixed_version=_redact(fixed) if fixed else None)
         for mis in result.get("Misconfigurations") or []:
             findings.append(_finding("Trivy", mis.get("ID", "TRIVY-MISCONFIG"), mis.get("Title", "Misconfiguration"),
                 mis.get("Severity"), "MEDIUM", target,

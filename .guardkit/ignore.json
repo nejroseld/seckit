@@ -1,0 +1,3 @@
+{"ignore": [
+  {"path": "benchmarks/fixtures/**", "reason": "Deliberately vulnerable and clean benchmark fixtures; scanned by benchmarks/run.py instead."}
+]}

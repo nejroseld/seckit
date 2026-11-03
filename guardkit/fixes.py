@@ -94,7 +94,7 @@ def propose(root: Path, findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "ds002" in signal or "last user command" in signal or "user" in signal and "root" in signal
         ):
             dockerfiles.setdefault(file, []).append(finding)
-        if "secret" in signal:
+        if "secret" in signal or finding.get("category") == "credential":
             patterns = _sensitive_pattern(file)
             if patterns:
                 applicable.setdefault(patterns, []).append(str(finding.get("id") or "unknown"))

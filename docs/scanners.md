@@ -21,3 +21,26 @@ The bundled checks cover Python shell execution, pickle/YAML deserialization, Fl
 Run `python benchmarks/run.py --trivy trivy --semgrep semgrep` to scan the paired hand-labeled fixtures. They include vulnerable and clean code patterns, a vulnerable/fixed Lodash lockfile pair, a root/modern Dockerfile pair, and placeholder credentials. Output separates exact static-rule precision/recall from category-level Trivy recall for credentials, dependencies, and misconfiguration; elapsed time includes both scans. This is a smoke benchmark only and cannot support general accuracy claims. Installation/setup time and vulnerability database provisioning are external to Guardkit and are reported as unmeasured. Trivy and Semgrep are not bundled with the source; they were provisioned and the real benchmark executed locally.
 
 The real-engine benchmark now runs successfully; results are in [latest.json](../benchmarks/latest.json). It includes a separate safe allowlist flow that CE flags as a heuristic warning. This counts against application precision. P0 labels and exact code locations are evaluated independently, and Docker ENV/token reports are consolidated with supporting rule provenance retained. See [validation](validation.md) for the measured sample and limits.
+
+## Accepted findings: `.guardkit/ignore.json`
+
+Scanner ignore files stay disabled, because a repository must not hide its own
+findings. Guardkit has one explicit mechanism instead:
+
+```json
+{"ignore": [
+  {"path": "tests/fixtures/**", "reason": "Deliberately vulnerable fixtures"},
+  {"rule_id": "guardkit.python.pickle-load", "path": "tools/*.py", "reason": "Trusted local cache"}
+]}
+```
+
+Each entry needs a non-empty `reason` and at least one of `path` (glob; `dir/**`
+for a subtree), `id` or `rule_id`; all given keys must match. Matching findings
+leave `findings` (so they do not affect the exit code) and appear in
+`suppressed` with `suppressed_reason`. Invalid entries are skipped and listed
+in `warnings`. Agents must not add entries unless the user asks.
+
+Dependency findings include `package`, `installed_version` and `fixed_version`
+(null when no patched release is known), so an agent can bump the version
+without extra lookups. The Express open-redirect rule treats
+`allowed.has(x) ? x : default` as a sanitizer.

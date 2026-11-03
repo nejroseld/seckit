@@ -67,7 +67,8 @@ The regression also covers bidirectional formatting controls and JSON round trip
   [scope and DB metadata](../benchmarks/security-production-scan-latest.json)
   record intentional fixture/test/generated-artifact exclusions.
 - The labeled benchmark reproduced 7/7 code matches and one known hard-negative
-  false positive: 87.5% precision and 100% recall on this small sample.
+  false positive (87.5% precision at the time; fixed afterwards by a redirect
+  sanitizer, see `benchmarks/latest.json`).
   See [benchmark evidence](../benchmarks/security-benchmark-latest.json).
 - The initial installed Semgrep environment had **nine dependency advisory findings**:
   four in `mcp==1.29.0`, one in `opentelemetry-api==1.37.0`, and four in

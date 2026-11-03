@@ -57,9 +57,11 @@ and HTTPS tests, in 40.477 seconds with no skips.
 [Recorded metrics](../benchmarks/latest.json) include seven labeled application
 findings with exact rule/file/line matches. All seven are detected. The ordinary
 clean fixture has no findings. A separate hard-negative fixture preserves a safe
-Set-allowlisted redirect that Semgrep CE still flags: it counts as a false
-positive rather than being hidden. Application precision is consequently 87.5%
-and recall 100% on this tiny set. These are not general accuracy estimates.
+Set-allowlisted redirect. The redirect rule was first reported on it (87.5%
+precision); a sanitizer for `allowed.has(x) ? x : default` removed the false
+positive without touching the positive fixture, so precision and recall are
+now 100% on this tiny set. Any new report on that fixture still counts as a
+false positive rather than being hidden. These are not general accuracy estimates.
 
 P0 precision/recall are 100% for **one** labeled normalized credential exposure,
 with zero P0 findings in clean/hard-negative fixtures. The Docker ENV warning

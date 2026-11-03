@@ -6,9 +6,9 @@
   "static_rule_precision_recall": {
     "expected": 7,
     "true_positive": 7,
-    "false_positive": 1,
+    "false_positive": 0,
     "false_negative": 0,
-    "precision": 0.875,
+    "precision": 1.0,
     "recall": 1.0
   },
   "clean_code_findings": 0,
@@ -20,8 +20,8 @@
     "precision": 1.0,
     "recall": 1.0
   },
-  "hard_negative_code_findings": 1,
-  "hard_negative_note": "Safe Set-allowlisted redirect; reports here count as false positives, not hidden exclusions.",
+  "hard_negative_code_findings": 0,
+  "hard_negative_note": "Safe Set-allowlisted redirect; since the sanitizer was added to guardkit.javascript.express-open-redirect it is no longer flagged. Any report here would count as a false positive, not a hidden exclusion.",
   "scanner_category_recall": {
     "categories": {
       "credential": {
@@ -45,7 +45,7 @@
     },
     "recall": 1.0
   },
-  "elapsed_seconds": 16.019,
+  "elapsed_seconds": 40.944,
   "setup_seconds": null,
   "setup_note": "Tool installation and Trivy database provisioning are external and unmeasured.",
   "errors": {

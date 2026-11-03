@@ -80,3 +80,31 @@ other changes in ordinary project files, within the user's task scope.
 Ignoring a file does not remove it from Git history or revoke a credential;
 exposed credentials still need to be rotated or revoked. A Dockerfile user
 change can affect ownership, writable paths, and capabilities.
+
+## MCP registration and removal
+
+`guardkit init --root PROJECT --mcp` also writes the `guardkit` server to the
+project-local `.mcp.json` (other servers in the file are kept). Without `--mcp`
+only the descriptor is printed. `guardkit uninstall --root PROJECT` removes the
+managed blocks from `AGENTS.md`, `CLAUDE.md`, the Cursor rule and both skills,
+deletes files that contain nothing else, and drops the `.mcp.json` entry; user
+content is kept. The scanner cache is never removed automatically.
+
+The generated instructions contain the interpreter path of the machine that ran
+`init`. After cloning elsewhere, re-run `guardkit init --root .`.
+
+## MCP `findings` filters
+
+`findings` accepts `id`, `min_priority` (`P0` to `P4`), `category`, `file`
+(path prefix), `limit` (default 50, max 200) and `offset`. The result carries
+`total` and `next_offset` (null on the last page). `resources/list` and
+`prompts/list` return empty lists.
+
+## CLI results
+
+JSON results always include `schema_version`, `status` (`clean`, `findings`,
+`incomplete`) and `exit_code` (0, 1, 2). Errors use the same envelope with an
+`error_code` where one applies. `fix --apply --run-tests` picks pytest for
+projects with `pytest.ini`, `conftest.py` or `[tool.pytest]`, otherwise
+`unittest` or `npm test`; on failure `project_tests.output_tail` holds the last
+lines of output with secret-like values masked.

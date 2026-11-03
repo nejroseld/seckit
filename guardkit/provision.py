@@ -12,6 +12,7 @@ import tarfile
 import tempfile
 import urllib.parse
 import urllib.request
+import sys
 import venv
 import zipfile
 from pathlib import Path
@@ -21,6 +22,11 @@ SEMGREP = "1.182.0"
 PIP = "26.2.2"
 # Pinned digest of the publisher's checksum manifest, from immutable GitHub release.
 CHECKSUM_SHA256 = "885debc41b570179e81af560e5f393a66be29b9ff8c52915674f3eb2304c535d"
+
+def _note(message: str) -> None:
+    """Progress goes to stderr so JSON on stdout stays clean."""
+    print(f"guardkit: {message}", file=sys.stderr, flush=True)
+
 
 class ProvisionError(RuntimeError):
     pass
@@ -63,6 +69,7 @@ def _trivy(base: Path) -> str:
     name = "trivy.exe" if os.name == "nt" else "trivy"
     dest = base / f"trivy-{TRIVY}" / name
     if dest.is_file() and compatible(str(dest), TRIVY): return str(dest)
+    _note(f"downloading Trivy {TRIVY} (first run only, ~1 min including all scanners)")
     url = f"https://github.com/aquasecurity/trivy/releases/download/v{TRIVY}/"
     checksums = fetch(url + f"trivy_{TRIVY}_checksums.txt")
     verify(checksums, CHECKSUM_SHA256)
@@ -150,6 +157,7 @@ def _semgrep(base: Path) -> str:
     if executable.exists() and compatible(str(executable), SEMGREP):
         _ensure_pip(python, base)
         return str(executable)
+    _note(f"installing Semgrep {SEMGREP} into the scanner cache (first run only)")
     try:
         venv.EnvBuilder(with_pip=True).create(folder)
     except (OSError, subprocess.SubprocessError) as exc:
