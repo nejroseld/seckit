@@ -9,7 +9,8 @@ not bundle an LLM or require an AI API key.
 `seckit init --root PROJECT` installs the project integration as part of
 initialization. It adds managed additive blocks to `AGENTS.md` and `CLAUDE.md`,
 project skills for Codex and Claude Code, and a Cursor rule with
-`alwaysApply: true`. Existing custom instructions are preserved. Only an exact
+`alwaysApply: true`. OpenCode picks up `AGENTS.md` and both skill
+directories. Existing custom instructions are preserved. Only an exact
 recognized old Seckit template is eligible for migration; other content is
 retained. No global agent configuration is changed. The instructions call
 plain `seckit` when the `seckit` on PATH is this installation (pipx, uv tool,
@@ -37,15 +38,17 @@ Generic MCP descriptor shape:
 Without `seckit` on PATH, use the isolated interpreter, for example:
 `/absolute/venv/bin/python -I -m seckit scan --json`, run inside the project.
 
-## Agent-run installation
+## Installation flow
 
-The flow is: the user pastes the installation prompt, the agent installs and
-initialises Seckit, scans, and offers the next steps.
+The user runs `pipx install seckit` and `seckit init` in a terminal (see
+[Setup](setup.md#install)). The agent uses what `init` installed: it scans and
+offers the next steps. If `seckit` is missing, the managed instructions tell
+the agent to ask the user for these two commands.
 
 - `seckit init --plan --json` writes nothing and does not download scanners.
   It returns `plan` (each file with `action` create/update/delete/rename and a
-  unified `diff`), `writes`, `downloads` and `command`. An agent that must
-  confirm changes to its own instruction files shows this plan first.
+  unified `diff`), `writes`, `downloads` and `command`, so the user can see
+  what `init` will change before running it.
 - `doctor` reports `command`: the `seckit` found on PATH and `ours`, whether it
   runs this installation. A different program named `seckit` on PATH yields a
   `fix-path` next step.

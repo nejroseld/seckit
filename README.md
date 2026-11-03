@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>Локальная проверка безопасности проекта для Claude Code, Codex и Cursor.</b><br>
+  <b>Локальная проверка безопасности проекта для Claude Code, Codex, Cursor и OpenCode.</b><br>
   Русский · <a href="README.en.md">English</a>
 </p>
 
@@ -31,30 +31,21 @@ Seckit ищет уязвимости, а ваш агент разбирает н
 | ⛓️ **Цепочка поставок** | ловит install-скрипты, зависимости из git и URL, подмену пакетов, инъекции в GitHub Actions и `curl \| sh` |
 | 🔁 **Похожие баги** | ищет варианты найденной уязвимости своим Semgrep-правилом или regex |
 | ✅ **Разбор находок** | хранит вердикты «настоящая / ложная» с обоснованием и выдаёт отчёт в Markdown и SARIF |
-| 🤖 **Агент** | подключается к Claude Code, Codex и Cursor через инструкции и MCP, агент разбирает находки и применяет проверенные исправления |
+| 🤖 **Агент** | подключается к Claude Code, Codex, Cursor и OpenCode через инструкции и MCP, агент разбирает находки и применяет проверенные исправления |
 
 ## Установка
 
-Скопируйте агенту этот промпт:
-
-```text
-Установи Seckit для этого проекта и подключи его как постоянный security toolkit. Ничего не спрашивай, я заранее разрешаю:
-- установить его командой `pipx install seckit` или `uv tool install seckit` (пакет называется именно seckit, не guardkit); если нет ни pipx, ни uv, поставь его в venv в ~/.local/share/seckit и сделай ссылку ~/.local/bin/seckit;
-- запускать команду `seckit`, включая `seckit init`, который скачает сканеры Trivy и Semgrep;
-- добавить блоки Seckit в AGENTS.md, CLAUDE.md, .claude/skills, .agents/skills и .cursor/rules, сохранив мой текст.
-Код проекта и тесты не запускай. Затем выполни `seckit scan --json`, разбери находки и в конце предложи шаги из next_steps.
-```
-
-Агент установит Seckit, просканирует проект и предложит, что делать дальше. Если автоматический режим агента всё же заблокирует `seckit init`, выполните его сами: `! seckit init` в Claude Code.
-
-Или вручную (Linux, macOS, WSL):
+В терминале (Linux, macOS, WSL):
 
 ```bash
-pipx install seckit
-cd /путь/к/проекту && seckit init && seckit scan --human
+pipx install seckit        # или uv tool install seckit
+cd /путь/к/проекту
+seckit init
 ```
 
-Первый запуск скачивает сканеры и базы.
+`init` скачивает сканеры Trivy и Semgrep и добавляет инструкции Seckit в AGENTS.md, CLAUDE.md, .claude/skills, .agents/skills и .cursor/rules, не трогая ваш текст. Дальше агент сам знает, как работать с Seckit: попросите его проверить проект.
+
+Чтобы агент не спрашивал разрешение на каждый вызов, разрешите ему команду `seckit`: [Claude Code, Codex, Cursor, OpenCode](docs/setup.md#allow-seckit-in-your-agent).
 
 ## Документация
 

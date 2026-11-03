@@ -1,6 +1,35 @@
 # Setup and operations
 
-Seckit is designed to be installed and used by a coding agent as the project's local security toolkit. The agent supplies the intelligence: it investigates scanner evidence, interprets project context, and makes changes within the user's task. Seckit provides local deterministic tools and does not bundle an LLM or require an AI API key. Install it from [PyPI](https://pypi.org/project/seckit/) as the `seckit` package into its own environment outside the project being scanned, with `pipx install seckit` or `uv tool install seckit`; both put the `seckit` command on PATH. Releases are built by `.github/workflows/publish.yml` from a version tag and carry a Sigstore provenance attestation.
+Seckit is installed by the user and used by a coding agent as the project's local security toolkit. The agent supplies the intelligence: it investigates scanner evidence, interprets project context, and makes changes within the user's task. Seckit provides local deterministic tools and does not bundle an LLM or require an AI API key. Install it from [PyPI](https://pypi.org/project/seckit/) as the `seckit` package into its own environment outside the project being scanned, with `pipx install seckit` or `uv tool install seckit`; both put the `seckit` command on PATH. Releases are built by `.github/workflows/publish.yml` from a version tag and carry a Sigstore provenance attestation.
+
+## Install
+
+```bash
+pipx install seckit        # or uv tool install seckit
+cd /path/to/project
+seckit init
+```
+
+Run these in a terminal. `init` downloads the scanners and writes the agent instructions; from then on the agent uses Seckit through them.
+
+### Allow seckit in your agent
+
+`seckit scan` updates the CVE database over the network and writes to `~/.cache/seckit`, so a sandboxed agent needs `seckit` allowed to run outside the sandbox. Allow the command once:
+
+- **Claude Code**: `/permissions`, add the allow rule `Bash(seckit *)`, or put it in `.claude/settings.local.json`:
+  `{"permissions": {"allow": ["Bash(seckit *)"]}}`. Narrow rules [stay in effect in auto mode](https://code.claude.com/docs/en/permission-modes) and skip the classifier. Answering "Yes, and don't ask again" on the first prompt does the same.
+- **Codex**: add a [rule](https://learn.chatgpt.com/docs/agent-configuration/rules); `allow` runs the command outside the sandbox without prompting:
+  ```bash
+  mkdir -p ~/.codex/rules
+  echo 'prefix_rule(pattern = ["seckit"], decision = "allow")' >> ~/.codex/rules/default.rules
+  ```
+- **Cursor**: Settings > Agents > Approvals & Execution, add `seckit` to the command allowlist. In Auto-review mode allowlisted commands run outside the sandbox.
+- **OpenCode**: nothing to do with default settings. If your `opencode.json` sets `bash` to `ask`, add `"seckit *": "allow"` after it (the last matching rule wins).
+
+OpenCode reads `AGENTS.md` and the skills in `.claude/skills` and `.agents/skills`, so `init` covers it without extra files. Cursor loads skills from `.agents/skills` and `.claude/skills` as well as its rule.
+
+## Operations
+
 
 `init` provisions scanners and always installs project-local agent instructions. It adds managed blocks to `AGENTS.md` and `CLAUDE.md`, Codex and Claude Code skills, and a Cursor rule marked `alwaysApply: true`. Existing custom text is preserved; only exact recognized old Seckit templates are migrated. Its JSON result includes the command and arguments for optional MCP client registration; init does not change global client configuration. Commands accept `--root PATH`, which defaults to the git top level of the working directory (or the directory itself outside git); `init --plan` shows the files and diffs init would write without changing anything; `scan`, `fix`, `init`, and `doctor` emit JSON by default, accept explicit `--json`, and accept `--human` for terminal display. Scan exit codes: 0 means complete with no findings, 1 means findings, and 2 means incomplete. A clean static scan is not proof of security or authorization correctness.
 
