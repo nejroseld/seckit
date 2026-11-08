@@ -223,7 +223,7 @@ class ApprovalVerificationTests(unittest.TestCase):
             root=Path(tmp).resolve(); docker=root/'Dockerfile'; docker.write_text('FROM alpine\nUSER root\n')
             finding={'id':'root-user','rule_id':'DS002','file':'Dockerfile','line':2}
             with patch.object(reviews,'_directory',return_value=Path(cache)), patch.object(cli,'_scan',side_effect=[
-                {'findings':[finding],'errors':[]}, {'findings':[],'errors':[]}]), patch.object(cli,'_project_tests',return_value=['fake-test']) as test_command, \
+                {'findings':[finding],'errors':[]}, {'findings':[],'errors':[]}]), patch.object(cli,'_project_tests',return_value=[sys.executable]) as test_command, \
                  patch.object(cli.subprocess,'run',return_value=type('Process',(),{'returncode':0})()):
                 code, proposal, _=CLITests().run_cli(['fix','--root',tmp,'--check'])
                 review_id=json.loads(proposal)['review_id']
@@ -231,7 +231,7 @@ class ApprovalVerificationTests(unittest.TestCase):
                 code, output, _=CLITests().run_cli(['fix','--root',tmp,'--apply',review_id,'--run-tests'])
                 self.assertEqual(code,0)
                 test_command.assert_called_once_with(root)
-                self.assertEqual(json.loads(output)['project_tests']['command'],['fake-test'])
+                self.assertEqual(json.loads(output)['project_tests']['command'],[sys.executable])
 
     def test_fix_skip_tests_hidden_noop_and_run_tests_requires_apply(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(cli,'_scan',return_value={'findings':[],'errors':[]}):
@@ -289,6 +289,7 @@ class WheelTrustTests(unittest.TestCase):
                 raise AssertionError(f'unexpected download: {url}')
 
             with patch.object(provision, '_checked', side_effect=checked), \
+                 patch.object(provision, 'PIP_SHA256', hashlib.sha256(pip_bytes).hexdigest()), \
                  patch.object(provision, '_pip_version', side_effect=['26.0.1', provision.PIP]), \
                  patch.object(provision, 'fetch', side_effect=metadata_for), \
                  patch.object(provision, 'compatible', return_value=True):
@@ -318,13 +319,28 @@ class WheelTrustTests(unittest.TestCase):
         url = 'https://files.pythonhosted.org/packages/pip.whl'
         metadata = {'info': {'name': 'pip', 'version': provision.PIP}, 'urls': [{
             'filename': wheel_name, 'packagetype': 'bdist_wheel', 'url': url,
-            'digests': {'sha256': '0' * 64}}]}
+            'digests': {'sha256': provision.PIP_SHA256}}]}
         with tempfile.TemporaryDirectory() as tmp, \
              patch.object(provision, '_pip_version', return_value='26.0.1'), \
              patch.object(provision, 'fetch', side_effect=[json.dumps(metadata).encode(), b'tampered wheel']), \
              patch.object(provision, '_checked') as execute:
             with self.assertRaisesRegex(provision.ProvisionError, 'checksum mismatch'):
                 provision._ensure_pip('/tmp/venv/bin/python', Path(tmp))
+        execute.assert_not_called()
+
+    def test_pip_metadata_disagreeing_with_shipped_pin_is_rejected_before_download(self):
+        wheel_name = f'pip-{provision.PIP}-py3-none-any.whl'
+        bad = hashlib.sha256(b'attacker wheel').hexdigest()
+        metadata = {'info': {'name': 'pip', 'version': provision.PIP}, 'urls': [{
+            'filename': wheel_name, 'packagetype': 'bdist_wheel', 'url': 'https://files.pythonhosted.org/p/pip.whl',
+            'digests': {'sha256': bad}}]}
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(provision, '_pip_version', return_value='26.0.1'), \
+             patch.object(provision, 'fetch', side_effect=[json.dumps(metadata).encode()]) as fetch, \
+             patch.object(provision, '_checked') as execute:
+            with self.assertRaisesRegex(provision.ProvisionError, 'metadata was invalid'):
+                provision._ensure_pip('/tmp/venv/bin/python', Path(tmp))
+        self.assertEqual(fetch.call_count, 1)
         execute.assert_not_called()
 
     def test_cached_semgrep_refreshes_pip_without_rebuilding_venv(self):
@@ -343,6 +359,7 @@ class WheelTrustTests(unittest.TestCase):
             executable=bindir/('semgrep.exe' if os.name=='nt' else 'semgrep')
             executable.write_text('existing compatible scanner')
             with patch.object(provision,'compatible',return_value=True), \
+                 patch.object(provision,'PIP_SHA256',hashlib.sha256(pip_bytes).hexdigest()), \
                  patch.object(provision,'_pip_version',side_effect=['26.0.1',provision.PIP]), \
                  patch.object(provision,'fetch',side_effect=metadata_for), \
                  patch.object(provision,'_checked') as install, \
@@ -373,7 +390,7 @@ class WheelTrustTests(unittest.TestCase):
             if url=='https://pypi.org/pypi/pip/26.2.2/json': return json.dumps(pip_metadata).encode()
             if url==pip_url: return pip_bytes
             return json.dumps(dependency_metadata).encode()
-        with tempfile.TemporaryDirectory() as tmp, patch.object(provision.venv,'EnvBuilder') as builder, patch.object(provision,'_pip_version',side_effect=['26.0.1',provision.PIP]), patch.object(provision,'_checked',side_effect=command), patch.object(provision,'fetch',side_effect=metadata_for):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(provision,'PIP_SHA256',hashlib.sha256(pip_bytes).hexdigest()), patch.object(provision.venv,'EnvBuilder') as builder, patch.object(provision,'_pip_version',side_effect=['26.0.1',provision.PIP]), patch.object(provision,'_checked',side_effect=command), patch.object(provision,'fetch',side_effect=metadata_for):
             with self.assertRaises(provision.ProvisionError): provision._semgrep(Path(tmp))
         self.assertEqual(len(calls),2)
         self.assertIn('-I',calls[0])

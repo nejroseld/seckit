@@ -34,7 +34,8 @@ def create(root: Path, plans: list[dict]) -> str | None:
     payload = {"root": str(root.resolve()), "expires": time.time() + 3600, "plans": plans}
     directory = _directory()
     # Expired snapshots may include source comments; don't retain them indefinitely.
-    for old in directory.glob("*.json"):
+    # Also drop claims left by a process that was killed while applying a review.
+    for old in [*directory.glob("*.json"), *directory.glob("*.claimed-*")]:
         try:
             info = old.lstat()
             if stat.S_ISREG(info.st_mode) and info.st_mtime < time.time() - 3600:

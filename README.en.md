@@ -15,7 +15,7 @@
   <a href="https://github.com/nejroseld/seckit/blob/main/LICENSE"><img alt="FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-64748b"></a>
 </p>
 
-Seckit finds vulnerabilities and leaked secrets. Your agent reviews the findings and fixes the code. No API key needed, everything runs locally.
+Seckit finds vulnerabilities and leaked secrets. Your agent reviews the findings and fixes the code. No API key needed. Project code never leaves the machine: only scanner downloads and CVE database updates use the network, and scanners have no network while they read the project.
 
 ## What it does
 

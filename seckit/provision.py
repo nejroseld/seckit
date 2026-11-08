@@ -19,9 +19,14 @@ import venv
 import zipfile
 from pathlib import Path
 
+from . import sandbox
+
 TRIVY = "0.76.1"
 SEMGREP = "1.182.0"
 PIP = "26.2.2"
+# sha256 of pip-26.2.2-py3-none-any.whl, pinned like the Trivy manifest: PyPI metadata
+# must agree with it, so a substituted file or metadata response is rejected.
+PIP_SHA256 = "fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70"
 # Pinned digest of the publisher's checksum manifest, from immutable GitHub release.
 CHECKSUM_SHA256 = "885debc41b570179e81af560e5f393a66be29b9ff8c52915674f3eb2304c535d"
 
@@ -84,8 +89,9 @@ def verify(data: bytes, digest: str) -> None:
 
 def compatible(path: str, version: str) -> bool:
     try:
-        p = subprocess.run([path, "--version"], capture_output=True, text=True, timeout=15,
-                           env={**os.environ, "SEMGREP_ENABLE_VERSION_CHECK": "0", "SEMGREP_SEND_METRICS": "off"})
+        with sandbox.no_network() as proxy:
+            p = subprocess.run([path, "--version"], capture_output=True, text=True, timeout=15,
+                               env=sandbox.environment(None, proxy))
         return p.returncode == 0 and re.search(r"(?<![\d.])" + re.escape(version) + r"(?![\d.])", p.stdout) is not None
     except (OSError, subprocess.TimeoutExpired):
         return False
@@ -163,10 +169,10 @@ def _ensure_pip(python: str, base: Path) -> None:
     artifact = matches[0]
     url = urllib.parse.urlsplit(artifact.get("url", ""))
     digest = (artifact.get("digests") or {}).get("sha256", "")
-    if url.scheme != "https" or url.hostname != "files.pythonhosted.org" or not re.fullmatch(r"[0-9a-f]{64}", digest):
+    if url.scheme != "https" or url.hostname != "files.pythonhosted.org" or digest != PIP_SHA256:
         raise ProvisionError("Pinned pip wheel metadata was invalid")
     wheel_data = fetch(artifact["url"])
-    verify(wheel_data, digest)
+    verify(wheel_data, PIP_SHA256)
     with tempfile.TemporaryDirectory(dir=base) as tmp:
         wheel = Path(tmp) / filename
         wheel.write_bytes(wheel_data)

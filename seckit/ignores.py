@@ -4,6 +4,10 @@ Unlike scanner ignore files, suppressed findings are never hidden: they move to
 the report's `suppressed` list together with the stated reason. Every rule
 needs a non-empty `reason`, and a rule matches by `path` glob, finding `id`,
 or `rule_id` (optionally combined with `path`).
+
+The file is part of the project, so its author controls it. Suppressions apply
+only when the user accepted these exact bytes on this machine (`seckit trust`);
+otherwise the findings stay in `findings` and a warning says why.
 """
 from __future__ import annotations
 
@@ -11,6 +15,8 @@ import fnmatch
 import json
 from pathlib import Path
 from typing import Any
+
+from . import trust
 
 FILE = Path(".seckit") / "ignore.json"
 
@@ -40,7 +46,7 @@ def load(root: Path) -> tuple[list[dict[str, str]], list[str]]:
         items = data["ignore"]
         if not isinstance(items, list):
             raise TypeError
-    except (OSError, ValueError, KeyError, TypeError):
+    except (OSError, ValueError, KeyError, TypeError, RecursionError):
         return [], [f"{FILE.as_posix()} is invalid; expected {{\"ignore\": [...]}}. No suppressions applied"]
     rules, problems = [], []
     for index, item in enumerate(items):
@@ -63,17 +69,27 @@ def _matches(rule: dict[str, str], finding: dict[str, Any]) -> bool:
     return True
 
 
+def relative(root: Path) -> str:
+    return _existing(root).relative_to(Path(root)).as_posix()
+
+
 def apply(root: Path, report: dict[str, Any]) -> dict[str, Any]:
     """Move suppressed findings out of `findings`; invalid rules become warnings."""
     rules, problems = load(root)
-    kept, suppressed = [], []
+    accepted = not rules or trust.is_trusted(root, relative(root))
+    kept, suppressed, withheld = [], [], 0
     for finding in report.get("findings", []):
         rule = next((r for r in rules if _matches(r, finding)), None)
         if rule is None:
             kept.append(finding)
+        elif not accepted:
+            withheld += 1
+            kept.append(finding)
         else:
             suppressed.append({**finding, "suppressed_reason": rule["reason"]})
+    if not accepted:
+        problems.append(trust.untrusted_notice(relative(root), f"its suppressions were not applied ({withheld} finding(s) kept)"))
     report["findings"] = kept
     report["suppressed"] = suppressed
-    report["warnings"] = problems
+    report["warnings"] = list(report.get("warnings", [])) + problems
     return report
