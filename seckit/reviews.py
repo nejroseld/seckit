@@ -18,7 +18,8 @@ class ReviewError(ValueError):
 
 def _directory() -> Path:
     directory = provision.cache_dir() / "reviews"
-    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    provision.ensure_private_dir(provision.cache_dir())
+    directory.mkdir(mode=0o700, exist_ok=True)
     info = directory.lstat()
     if not stat.S_ISDIR(info.st_mode) or (hasattr(os, "getuid") and info.st_uid != os.getuid()):
         raise ValueError("unsafe review cache")

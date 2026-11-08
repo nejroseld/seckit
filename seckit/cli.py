@@ -2,7 +2,9 @@
 from __future__ import annotations
 import argparse
 import json
+import os
 import platform
+import re
 import shlex
 import subprocess
 import sys
@@ -84,6 +86,16 @@ def _show(report: dict, as_json: bool = False, root: Path | None = None) -> int:
     return code
 
 
+_SECRET_ENV = re.compile(r"(?i)(token|secret|passw|credential|api[_-]?key|private[_-]?key|auth|cookie|session|^aws_|^gh_|^github_|^npm_|^pypi_|^anthropic|^openai)")
+
+
+def _test_environment() -> dict[str, str]:
+    """Environment for project tests: no credentials, only what a test run normally needs."""
+    env = {k: v for k, v in os.environ.items() if not _SECRET_ENV.search(k)}
+    env["CI"] = "1"
+    return env
+
+
 def _project_tests(root: Path) -> list[str] | None:
     try:
         manifest = root / "package.json"
@@ -142,8 +154,7 @@ def _fix(root: Path, as_json: bool, review_id: str | None = None,
     test_status, test_output = "not_run", ""
     if tests:
         try:
-            import os
-            process = subprocess.run(tests, cwd=root, env={**os.environ, "CI": "1"}, text=True, errors="replace",
+            process = subprocess.run(tests, cwd=root, env=_test_environment(), text=True, errors="replace",
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=180)
             test_status = "passed" if process.returncode == 0 else "failed"
             if process.returncode:

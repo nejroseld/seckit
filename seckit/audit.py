@@ -6,12 +6,15 @@ command hooks (fsmonitor, external diff, textconv, filters) disabled.
 """
 from __future__ import annotations
 
+import contextlib
 import difflib
 import hashlib
 import json
 import os
 import re
+import signal
 import subprocess
+import threading
 import tempfile
 from pathlib import Path
 from typing import Any, Iterator
@@ -246,6 +249,43 @@ def search_code(root: Path, pattern: str, path: str = "", glob: str | None = Non
         rx = re.compile(pattern, re.IGNORECASE if ignore_case else 0)
     except re.error as exc:
         raise AuditError(f"invalid regex: {exc.msg}") from None
+    import fnmatch
+    if not _CAN_INTERRUPT and _NESTED_QUANTIFIER.search(pattern):
+        raise AuditError("pattern has a nested quantifier and could take exponential time; simplify it")
+    try:
+        with _regex_deadline(_REGEX_SECONDS):
+            return _search(root, rx, path, glob, limit)
+    except _RegexTimeout:
+        raise AuditError("search timed out; use a simpler pattern or a narrower path") from None
+
+
+_REGEX_SECONDS = 20
+_NESTED_QUANTIFIER = re.compile(r"\([^)]*[+*][^)]*\)\s*[+*{]")
+_CAN_INTERRUPT = hasattr(signal, "setitimer") and hasattr(signal, "SIGALRM")
+
+
+class _RegexTimeout(Exception):
+    pass
+
+
+@contextlib.contextmanager
+def _regex_deadline(seconds: int):
+    """Interrupt catastrophic backtracking (the re engine polls signals) where SIGALRM exists."""
+    if not _CAN_INTERRUPT or threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    def fire(signum, frame):
+        raise _RegexTimeout
+    previous = signal.signal(signal.SIGALRM, fire)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
+
+
+def _search(root: Path, rx: re.Pattern[str], path: str, glob: str | None, limit: int) -> dict[str, Any]:
     import fnmatch
     matches, files, total = [], 0, 0
     for rel, file in iter_files(root, None, path):

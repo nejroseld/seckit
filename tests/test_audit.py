@@ -185,5 +185,18 @@ class McpAuditTests(unittest.TestCase):
             self.assertFalse((root / ".agents").exists())
 
 
+class SearchTimeoutTests(unittest.TestCase):
+    @unittest.skipUnless(audit._CAN_INTERRUPT, 'needs SIGALRM')
+    def test_catastrophic_pattern_is_interrupted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, 'a.py').write_text('a' * 40 + 'b\n')
+            with patch.object(audit, '_REGEX_SECONDS', 1), self.assertRaisesRegex(audit.AuditError, 'timed out'):
+                audit.search_code(Path(tmp), r'^(a+)+$')
+
+    def test_nested_quantifier_heuristic(self):
+        self.assertTrue(audit._NESTED_QUANTIFIER.search('(a+)+$'))
+        self.assertFalse(audit._NESTED_QUANTIFIER.search('foo\\(bar\\)'))
+
+
 if __name__ == "__main__":
     unittest.main()

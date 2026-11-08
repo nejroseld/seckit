@@ -46,4 +46,4 @@ version = { attr = "seckit.__version__" }
 include = ["seckit*"]
 
 [tool.setuptools.package-data]
-seckit = ["rules/*.yml"]
+seckit = ["rules/*.yml", "locks/*.txt"]
