@@ -4,6 +4,7 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 import json
+import os
 import shlex
 import subprocess
 import sys
@@ -63,7 +64,12 @@ class AgentInstallTests(unittest.TestCase):
     def test_generated_invocation_runs_with_cli_option_order(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            command = shlex.split(agents._invocation(root))
+            text = agents._invocation(root)
+            if os.name == "nt":
+                self.assertEqual(text, subprocess.list2cmdline([sys.executable, "-I", "-m", "seckit"]))
+                command = [sys.executable, "-I", "-m", "seckit"]
+            else:
+                command = shlex.split(text)
             self.assertEqual(command[0], sys.executable)
             self.assertEqual(command[1:4], ["-I", "-m", "seckit"])
             # Isolated mode intentionally ignores this source checkout; remove it only

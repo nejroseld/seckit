@@ -2,23 +2,25 @@
 from __future__ import annotations
 import argparse
 import json
+import os
 import platform
+import re
 import shlex
 import subprocess
 import sys
 import time
 from pathlib import Path
 from . import __version__
-from . import agents, audit, fixes, ignores, nextsteps, provision, reviews, supply_chain, triage
+from . import agents, audit, fixes, ignores, nextsteps, provision, reviews, sandbox, supply_chain, triage, trust
 from . import report as reporting
 from .detect import detect
-from .scanning import _SECRET, scan
+from .scanning import mask_secrets, scan
 
 
 def scanning_redact_lines(text: str) -> str:
     """Keep line structure but mask secret-looking assignments and host paths."""
     text = "".join(c if c.isprintable() or c == "\n" else " " for c in text)
-    return _SECRET.sub(r"\1\2[REDACTED]", text)
+    return mask_secrets(text)
 
 
 def _scan(root: Path) -> dict:
@@ -44,12 +46,67 @@ def _status(report: dict) -> tuple[str, int]:
 
 
 def _default_root() -> Path:
-    """The git top level above the working directory, else the directory itself."""
+    """The git top level above the working directory, else the directory itself.
+
+    The search never climbs to the home directory (a dotfiles repository there would
+    make every folder below it one project, and `init` would write ~/CLAUDE.md) and
+    stops at a `.git` that belongs to another user.
+    """
     cwd = Path.cwd()
+    try:
+        home = Path.home().resolve()
+    except (OSError, RuntimeError):
+        home = None
     for candidate in (cwd, *cwd.parents):
-        if (candidate / ".git").exists():
-            return candidate
+        marker = candidate / ".git"
+        if not (marker.exists() or marker.is_symlink()):
+            continue
+        if candidate.resolve() == home and cwd.resolve() != home:
+            break
+        try:
+            if hasattr(os, "getuid") and marker.lstat().st_uid != os.getuid():
+                break
+        except OSError:
+            break
+        return candidate
     return cwd
+
+
+def _trust(root: Path) -> int:
+    """Accept the project's .seckit files after the user has read them, in a terminal only."""
+    relatives = [rel for rel in (ignores.relative(root), triage._relative(root))
+                 if (root / rel).is_file() and not (root / rel).is_symlink()]
+    if not relatives:
+        print("No .seckit/ignore.json or .seckit/triage.json to accept.")
+        return 0
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        print("seckit trust needs a terminal: the user reviews and accepts these files, not an agent.", file=sys.stderr)
+        return 2
+    rules, problems = ignores.load(root)
+    verdicts = triage._read(root)
+    print(f"Project: {_terminal_text(root)}")
+    if ignores.relative(root) in relatives:
+        print(f"\n{ignores.relative(root)}: {len(rules)} suppression rule(s)")
+        for rule in rules:
+            where = ", ".join(f"{key}={_terminal_text(rule[key])}" for key in ("path", "id", "rule_id") if key in rule)
+            print(f"  - {where}\n    reason: {_terminal_text(rule['reason'])[:300]}")
+        for problem in problems:
+            print("  ! " + _terminal_text(problem))
+    if triage._relative(root) in relatives:
+        counts: dict[str, int] = {}
+        for entry in verdicts.values():
+            counts[entry["verdict"]] = counts.get(entry["verdict"], 0) + 1
+        print(f"\n{triage._relative(root)}: {len(verdicts)} verdict(s) " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items())))
+        for key, entry in sorted(verdicts.items()):
+            if entry["verdict"] == "false_positive":
+                print(f"  - {_terminal_text(key)}: false_positive: {_terminal_text(entry.get('reason', ''))[:300]}")
+    answer = input("\nApply these suppressions and verdicts on this machine? [y/N] ").strip().lower()
+    if answer not in ("y", "yes"):
+        print("Nothing accepted.")
+        return 1
+    accepted = trust.remember(root, relatives)
+    print("Accepted: " + ", ".join(accepted) + ". Any later change to these files needs `seckit trust` again.")
+    return 0
 
 
 def _print_steps(steps: list[dict]) -> None:
@@ -82,6 +139,16 @@ def _show(report: dict, as_json: bool = False, root: Path | None = None) -> int:
         for error in report.get("errors", []): print(f"Incomplete check: {error}", file=sys.stderr)
         _print_steps(report.get("next_steps", []))
     return code
+
+
+_SECRET_ENV = re.compile(r"(?i)(token|secret|passw|credential|api[_-]?key|private[_-]?key|auth|cookie|session|^aws_|^gh_|^github_|^npm_|^pypi_|^anthropic|^openai)")
+
+
+def _test_environment() -> dict[str, str]:
+    """Environment for project tests: no credentials, only what a test run normally needs."""
+    env = {k: v for k, v in os.environ.items() if not _SECRET_ENV.search(k)}
+    env["CI"] = "1"
+    return env
 
 
 def _project_tests(root: Path) -> list[str] | None:
@@ -142,8 +209,11 @@ def _fix(root: Path, as_json: bool, review_id: str | None = None,
     test_status, test_output = "not_run", ""
     if tests:
         try:
-            import os
-            process = subprocess.run(tests, cwd=root, env={**os.environ, "CI": "1"}, text=True, errors="replace",
+            # A bare program name would also be looked up in the project directory on Windows.
+            program = tests[0] if os.path.isabs(tests[0]) else sandbox.which(tests[0], root)
+            if program is None:
+                raise FileNotFoundError(tests[0])
+            process = subprocess.run([program, *tests[1:]], cwd=root, env=_test_environment(), text=True, errors="replace",
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=180)
             test_status = "passed" if process.returncode == 0 else "failed"
             if process.returncode:
@@ -177,7 +247,13 @@ def _fail(message: str, as_json: bool, **extra: object) -> int:
 
 def doctor(root: Path) -> dict:
     available = provision.tools(install=False)
-    limitations = ["Scanners require initial downloads; CVE databases require periodic network access."]
+    limitations = ["Scanners require initial downloads; CVE databases require periodic network access. "
+                   "Scans read the project with network access blocked."]
+    for relative, ok in ((ignores.relative(root), (root / ignores.relative(root)).is_file() and not ignores.load(root)[0]
+                          or trust.is_trusted(root, ignores.relative(root))),
+                         (triage._relative(root), triage.accepted(root))):
+        if (root / relative).is_file() and not ok:
+            limitations.append(f"{relative} is not accepted on this machine; run `seckit trust` in a terminal after reviewing it.")
     old_cache = provision.cache_dir().with_name("guardkit")
     if old_cache.is_dir():
         limitations.append(f"Scanner cache from Guardkit (the former name) is unused and can be deleted: {old_cache}")
@@ -185,7 +261,10 @@ def doctor(root: Path) -> dict:
             "command": agents.command_status(), "cache": str(provision.cache_dir()), "tools": available,
             "expected_versions": {"trivy": provision.TRIVY, "semgrep": provision.SEMGREP},
             "stack": detect(root),
+            "mcp_entry": agents.mcp_status(root, sys.executable, ["-I", "-m", "seckit", "mcp", "--root", str(root)]),
             "limitations": limitations}
+    if report["mcp_entry"] == "different":
+        limitations.append("The project's .mcp.json has a `seckit` server with a different command; inspect it before approving it.")
     report["next_steps"] = nextsteps.after_doctor(report)
     return report
 
@@ -257,13 +336,14 @@ def main(argv: list[str] | None = None) -> int:
              "rule": "Run a custom Semgrep rule or pattern (variant analysis)",
              "triage": "Record a verdict for a finding in .seckit/triage.json",
              "report": "Full audit report (scan + supply chain + triage) as markdown or SARIF"}
+    helps["trust"] = "Review and accept this project's .seckit/ignore.json and triage.json (terminal only)"
     for command in ("init", "scan", "fix", "doctor", "mcp", "uninstall", *helps):
         cmd = sub.add_parser(command, help=helps.get(command))
         cmd.add_argument("--root", type=Path, default=None, help="Project root (default: git top level of the working directory)")
         if command == "init":
             cmd.add_argument("--mcp", action="store_true", help="Also register the MCP server in the project-local .mcp.json")
             cmd.add_argument("--plan", action="store_true", help="Show the files and diffs init would write; change nothing")
-        if command != "mcp":
+        if command not in ("mcp", "trust"):
             output = cmd.add_mutually_exclusive_group()
             output.add_argument("--json", dest="json", action="store_true", default=True, help="Structured output (default)")
             output.add_argument("--human", dest="json", action="store_false", help="Readable terminal output")
@@ -302,6 +382,8 @@ def main(argv: list[str] | None = None) -> int:
         message = "--root must be a directory, not a file." if root.exists() else "Project directory does not exist."
         return _fail(message, getattr(ns, "json", False))
     try:
+        if ns.command == "trust":
+            return _trust(root)
         if ns.command == "doctor":
             report = doctor(root)
             if ns.json: print(json.dumps(report, indent=2))
@@ -334,10 +416,15 @@ def main(argv: list[str] | None = None) -> int:
             created = agents.install(root)
             if ns.mcp and agents.register_mcp(root, sys.executable, ["-I", "-m", "seckit", "mcp", "--root", str(root)]):
                 created.append(".mcp.json")
+            descriptor = {"command": sys.executable, "args": ["-I", "-m", "seckit", "mcp", "--root", str(root)]}
             report = {"stack": detect(root), "tools": installed, "agent_files_created": created,
                       "duration_seconds": round(time.monotonic() - start, 3),
-                      "mcp": {"command": sys.executable, "args": ["-I", "-m", "seckit", "mcp", "--root", str(root)]},
-                      "mcp_registered": ns.mcp, "command": agents.command_status()}
+                      "mcp": descriptor, "mcp_registered": ns.mcp, "command": agents.command_status(),
+                      "mcp_entry": agents.mcp_status(root, descriptor["command"], descriptor["args"]), "warnings": []}
+            if report["mcp_entry"] == "different":
+                report["warnings"].append("The project's .mcp.json already registers a server named `seckit` with a different "
+                                          "command. It was not written by this installation: inspect it before your client "
+                                          "starts it, or run `seckit init --mcp` to replace it.")
             report["next_steps"] = nextsteps.after_init(root, report["stack"], created, ns.mcp, report["command"]["ours"])
             report["next_action"] = "Report what was created, then offer next_steps to the user and ask which to start."
             if ns.json: print(json.dumps(report, indent=2))
@@ -345,6 +432,7 @@ def main(argv: list[str] | None = None) -> int:
                 print("Seckit ready\nDetected: " + (", ".join(report["stack"]) or "generic project"))
                 print("Application, dependency, configuration, and secret checks ready.")
                 print("Created or updated: " + (", ".join(created) or "nothing"))
+                for warning in report["warnings"]: print("Warning: " + warning, file=sys.stderr)
                 _print_steps(report["next_steps"])
             return 0
         if ns.command == "scan": return _show(_scan(root), ns.json, root)
@@ -376,4 +464,7 @@ def main(argv: list[str] | None = None) -> int:
     except (EOFError, KeyboardInterrupt):
         print("Cancelled; no further changes applied.", file=sys.stderr)
         return 130
+    except Exception as exc:  # noqa: BLE001 - never exit 1 ("findings") or print a traceback for a failure
+        return _fail(f"Operation could not complete ({type(exc).__name__}); no result is available. Run seckit doctor.",
+                     getattr(ns, "json", False))
     return 0

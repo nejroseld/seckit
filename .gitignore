@@ -6,3 +6,6 @@ build/
 dist/
 # Local benchmark output (python benchmarks/run.py > ...)
 benchmarks/*latest.json
+
+# Claude Code session dumps
+/20??-??-??-*-local-command-caveat*.txt

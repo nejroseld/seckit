@@ -7,9 +7,11 @@ import os
 import platform
 import re
 import shutil
+import stat
 import subprocess
 import tarfile
 import tempfile
+import time
 import urllib.parse
 import urllib.request
 import sys
@@ -17,9 +19,14 @@ import venv
 import zipfile
 from pathlib import Path
 
+from . import sandbox
+
 TRIVY = "0.76.1"
 SEMGREP = "1.182.0"
 PIP = "26.2.2"
+# sha256 of pip-26.2.2-py3-none-any.whl, pinned like the Trivy manifest: PyPI metadata
+# must agree with it, so a substituted file or metadata response is rejected.
+PIP_SHA256 = "fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70"
 # Pinned digest of the publisher's checksum manifest, from immutable GitHub release.
 CHECKSUM_SHA256 = "885debc41b570179e81af560e5f393a66be29b9ff8c52915674f3eb2304c535d"
 
@@ -38,16 +45,43 @@ def cache_dir() -> Path:
         base = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
     return base / "seckit"
 
+def ensure_private_dir(path: Path) -> None:
+    """Create the directory owner-only, or refuse one that is a symlink or owned by someone else."""
+    path.mkdir(parents=True, exist_ok=True, mode=0o700)
+    info = path.lstat()
+    if not stat.S_ISDIR(info.st_mode):
+        raise OSError("cache path is not a directory")
+    if hasattr(os, "getuid"):
+        if info.st_uid != os.getuid():
+            raise OSError("cache directory belongs to another user")
+        if stat.S_IMODE(info.st_mode) & 0o077:
+            path.chmod(0o700)
+
+
+class _HttpsOnly(urllib.request.HTTPRedirectHandler):
+    """Refuse a redirect to anything but HTTPS before the request is made."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if urllib.parse.urlsplit(newurl).scheme != "https":
+            raise ProvisionError("Insecure download redirect")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_MAX_DOWNLOAD = 512 * 1024 * 1024
+
+
 def fetch(url: str) -> bytes:
     if urllib.parse.urlsplit(url).scheme != "https":
         raise ProvisionError("Only HTTPS downloads are allowed")
     try:
-        with urllib.request.urlopen(url, timeout=60) as response:
+        with urllib.request.build_opener(_HttpsOnly).open(url, timeout=60) as response:
             if urllib.parse.urlsplit(response.url).scheme != "https":
                 raise ProvisionError("Insecure download redirect")
-            return response.read(512 * 1024 * 1024)
+            data = response.read(_MAX_DOWNLOAD + 1)
     except OSError as exc:
         raise ProvisionError("Download unavailable. Check network access and run seckit doctor.") from exc
+    if len(data) > _MAX_DOWNLOAD:
+        raise ProvisionError("Download is larger than the allowed limit")
+    return data
 
 def verify(data: bytes, digest: str) -> None:
     if hashlib.sha256(data).hexdigest() != digest:
@@ -55,8 +89,9 @@ def verify(data: bytes, digest: str) -> None:
 
 def compatible(path: str, version: str) -> bool:
     try:
-        p = subprocess.run([path, "--version"], capture_output=True, text=True, timeout=15,
-                           env={**os.environ, "SEMGREP_ENABLE_VERSION_CHECK": "0", "SEMGREP_SEND_METRICS": "off"})
+        with sandbox.no_network() as proxy:
+            p = subprocess.run([path, "--version"], capture_output=True, text=True, timeout=15,
+                               env=sandbox.environment(None, proxy))
         return p.returncode == 0 and re.search(r"(?<![\d.])" + re.escape(version) + r"(?![\d.])", p.stdout) is not None
     except (OSError, subprocess.TimeoutExpired):
         return False
@@ -134,10 +169,10 @@ def _ensure_pip(python: str, base: Path) -> None:
     artifact = matches[0]
     url = urllib.parse.urlsplit(artifact.get("url", ""))
     digest = (artifact.get("digests") or {}).get("sha256", "")
-    if url.scheme != "https" or url.hostname != "files.pythonhosted.org" or not re.fullmatch(r"[0-9a-f]{64}", digest):
+    if url.scheme != "https" or url.hostname != "files.pythonhosted.org" or digest != PIP_SHA256:
         raise ProvisionError("Pinned pip wheel metadata was invalid")
     wheel_data = fetch(artifact["url"])
-    verify(wheel_data, digest)
+    verify(wheel_data, PIP_SHA256)
     with tempfile.TemporaryDirectory(dir=base) as tmp:
         wheel = Path(tmp) / filename
         wheel.write_bytes(wheel_data)
@@ -163,25 +198,16 @@ def _semgrep(base: Path) -> str:
     except (OSError, subprocess.SubprocessError) as exc:
         raise ProvisionError("Python venv/pip support is unavailable; use a full user-space Python installation.") from exc
     _ensure_pip(python, base)
-    # Download wheels without executing source builds. Verify every transitive wheel
-    # against PyPI's HTTPS metadata before allowing pip to install any of them.
-    with tempfile.TemporaryDirectory(dir=base) as tmp:
-        _checked([python, "-I", "-m", "pip", "--isolated", "--disable-pip-version-check", "download", "--index-url", "https://pypi.org/simple", "--only-binary=:all:", "--dest", tmp, f"semgrep=={SEMGREP}"])
-        def verified_requirement(wheel: Path) -> str:
-            package, version = wheel.name.split("-")[:2]
-            metadata = json.loads(fetch(f"https://pypi.org/pypi/{package}/{version}/json"))
-            matches = [item for item in metadata["urls"] if item["filename"] == wheel.name]
-            if len(matches) != 1: raise ProvisionError("Wheel missing from publisher metadata")
-            digest = matches[0]["digests"]["sha256"]
-            verify(wheel.read_bytes(), digest)
-            return f"{package}=={version} --hash=sha256:{digest}"
-        with ThreadPoolExecutor(max_workers=8) as workers:
-            lock = list(workers.map(verified_requirement, Path(tmp).glob("*.whl")))
-        if not lock: raise ProvisionError("No Semgrep wheels downloaded")
-        requirements = Path(tmp) / "verified.txt"
-        requirements.write_text("\n".join(sorted(lock)) + "\n")
-        _checked([python, "-I", "-m", "pip", "--isolated", "--disable-pip-version-check", "install", "--no-index", "--find-links", tmp, "--require-hashes", "-r", str(requirements)])
-        (folder / "verified-requirements.txt").write_text(requirements.read_text())
+    # Install only wheels (no source builds) whose sha256 is in the lock shipped with Seckit,
+    # so a newly published or tampered dependency release cannot be installed.
+    lock = Path(__file__).with_name("locks") / f"semgrep-{SEMGREP}.txt"
+    if not lock.is_file():
+        raise ProvisionError("Seckit is missing the dependency lock for the pinned Semgrep version")
+    _checked([python, "-I", "-m", "pip", "--isolated", "--disable-pip-version-check", "install",
+              "--index-url", "https://pypi.org/simple", "--only-binary=:all:",
+              "--require-hashes", "-r", str(lock)])
+    folder.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(lock, folder / "verified-requirements.txt")
     if not compatible(str(executable), SEMGREP): raise ProvisionError("Installed Semgrep did not pass version check")
     return str(executable)
 
@@ -193,10 +219,12 @@ def _locked_install(base: Path, name: str, installer) -> str:
             if lock.tell() == 0:
                 lock.write(b"0"); lock.flush()
             lock.seek(0)
-            try:
-                msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
-            except OSError as exc:
-                raise ProvisionError("Another installation is in progress; retry shortly.") from exc
+            while True:
+                try:
+                    msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+                    break
+                except OSError:
+                    time.sleep(0.5)
         else:
             import fcntl
             fcntl.flock(lock, fcntl.LOCK_EX)
@@ -214,12 +242,11 @@ def tools(install: bool = True) -> dict[str, str]:
     base = cache_dir()
     def resolve(spec):
         name, version, installer = spec
-        existing = shutil.which(name)
-        if existing and compatible(existing, version):
-            return name, existing
+        # Executables found on PATH are never reused: PATH (and, on Windows, the
+        # working directory) can be controlled by the repository being scanned.
         if install:
             try:
-                base.mkdir(parents=True, exist_ok=True, mode=0o700)
+                ensure_private_dir(base)
             except OSError as exc:
                 raise ProvisionError("Scanner cache is not writable. Set XDG_CACHE_HOME (LOCALAPPDATA on Windows) to a writable directory.") from exc
             return name, _locked_install(base, name, installer)

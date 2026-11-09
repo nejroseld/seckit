@@ -1,4 +1,4 @@
 FROM node:14.21.3
-ENV API_TOKEN=ghp_80xHwqK4GYXFUp3DbCVg5niPmISQA1N6RMWt
+ENV API_TOKEN=__FAKE_GITHUB_TOKEN__
 USER root
 CMD ["node", "server.js"]

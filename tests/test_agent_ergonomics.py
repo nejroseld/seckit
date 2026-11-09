@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from seckit import agents, cli, fixes, ignores, scanning
+from seckit import agents, cli, fixes, ignores, scanning, trust
 
 
 def finding(**kw):
@@ -20,17 +20,22 @@ def finding(**kw):
 class IgnoreTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.root = Path(self.tmp.name)
-        (self.root / ".seckit").mkdir()
+        self.root = Path(self.tmp.name) / "project"
+        (self.root / ".seckit").mkdir(parents=True)
+        cache = patch("seckit.provision.cache_dir", return_value=Path(self.tmp.name) / "cache")
+        cache.start()
+        self.addCleanup(cache.stop)
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def write(self, data):
+    def write(self, data, accept=False):
         (self.root / ".seckit/ignore.json").write_text(json.dumps(data))
+        if accept:
+            trust.remember(self.root, [".seckit/ignore.json"])
 
     def test_suppressed_findings_stay_visible_with_reason(self):
-        self.write({"ignore": [{"path": "tests/fixtures/**", "reason": "fixtures"}, {"rule_id": "r2", "reason": "accepted"}]})
+        self.write({"ignore": [{"path": "tests/fixtures/**", "reason": "fixtures"}, {"rule_id": "r2", "reason": "accepted"}]}, accept=True)
         report = {"findings": [finding(file="tests/fixtures/a.py"), finding(id="b", rule_id="r2"), finding(id="c")], "errors": []}
         out = ignores.apply(self.root, report)
         self.assertEqual([f["id"] for f in out["findings"]], ["c"])
@@ -143,11 +148,27 @@ class CliTests(unittest.TestCase):
             root = Path(tmp)
             proc = subprocess.CompletedProcess([], 1, stdout="line\nAssertionError: boom\n")
             with patch.object(cli.reviews, "consume", return_value=[]), patch.object(cli.fixes, "apply", return_value=[]), \
-                 patch.object(cli, "_project_tests", return_value=["t"]), patch.object(subprocess, "run", return_value=proc), \
+                 patch.object(cli, "_project_tests", return_value=[sys.executable]), patch.object(subprocess, "run", return_value=proc), \
                  patch.object(cli, "_scan", return_value={"findings": [], "errors": []}):
                 code, out, _ = self.run_cli(["fix", "--root", tmp, "--apply", "x", "--run-tests"])
         self.assertEqual(code, 2)
         self.assertIn("boom", json.loads(out)["project_tests"]["output_tail"])
+
+    def test_test_runner_is_never_started_from_the_project_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            planted = root / ("npm.cmd" if sys.platform == "win32" else "npm")
+            planted.write_text("#!/bin/sh\n")
+            planted.chmod(0o755)
+            started = []
+            with patch.object(cli.reviews, "consume", return_value=[]), patch.object(cli.fixes, "apply", return_value=[]), \
+                 patch.object(cli, "_project_tests", return_value=["npm", "test"]), \
+                 patch.dict("os.environ", {"PATH": str(root)}), \
+                 patch.object(subprocess, "run", side_effect=lambda command, **kw: started.append(command)), \
+                 patch.object(cli, "_scan", return_value={"findings": [], "errors": []}):
+                code, out, _ = self.run_cli(["fix", "--root", tmp, "--apply", "x", "--run-tests"])
+        self.assertEqual(started, [])
+        self.assertEqual(json.loads(out)["project_tests"]["status"], "failed")
 
 
 if __name__ == "__main__":

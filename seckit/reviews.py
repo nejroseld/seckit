@@ -18,7 +18,8 @@ class ReviewError(ValueError):
 
 def _directory() -> Path:
     directory = provision.cache_dir() / "reviews"
-    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    provision.ensure_private_dir(provision.cache_dir())
+    directory.mkdir(mode=0o700, exist_ok=True)
     info = directory.lstat()
     if not stat.S_ISDIR(info.st_mode) or (hasattr(os, "getuid") and info.st_uid != os.getuid()):
         raise ValueError("unsafe review cache")
@@ -33,7 +34,8 @@ def create(root: Path, plans: list[dict]) -> str | None:
     payload = {"root": str(root.resolve()), "expires": time.time() + 3600, "plans": plans}
     directory = _directory()
     # Expired snapshots may include source comments; don't retain them indefinitely.
-    for old in directory.glob("*.json"):
+    # Also drop claims left by a process that was killed while applying a review.
+    for old in [*directory.glob("*.json"), *directory.glob("*.claimed-*")]:
         try:
             info = old.lstat()
             if stat.S_ISREG(info.st_mode) and info.st_mtime < time.time() - 3600:

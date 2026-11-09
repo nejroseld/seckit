@@ -86,6 +86,7 @@ class RootAndCommandTests(unittest.TestCase):
             finally:
                 os.chdir(previous)
 
+    @unittest.skipIf(os.name == "nt", "shebang launchers are POSIX only")
     def test_command_on_path_must_use_this_interpreter(self):
         with tempfile.TemporaryDirectory() as tmp:
             script = Path(tmp) / "seckit"
@@ -99,6 +100,15 @@ class RootAndCommandTests(unittest.TestCase):
                 self.assertNotEqual(agents._invocation(Path(tmp)), "seckit")
             with patch("shutil.which", return_value=None):
                 self.assertEqual(agents.command_status(), {"path": None, "ours": False})
+
+    @unittest.skipUnless(os.name == "nt", "console scripts are .exe launchers on Windows")
+    def test_windows_launcher_must_sit_next_to_this_interpreter(self):
+        beside = Path(sys.executable).with_name("seckit.exe")
+        with patch("shutil.which", return_value=str(beside)):
+            self.assertTrue(agents.command_status()["ours"])
+            self.assertEqual(agents._invocation(Path(".")), "seckit")
+        with patch("shutil.which", return_value=str(Path(sys.executable).parent.parent / "other" / "seckit.exe")):
+            self.assertFalse(agents.command_status()["ours"])
 
     def test_instructions_have_no_machine_paths_when_on_path(self):
         with tempfile.TemporaryDirectory() as tmp, \

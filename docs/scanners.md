@@ -2,13 +2,18 @@
 
 Repository `.semgrepignore` and `.gitignore` files and inline `nosemgrep`
 comments cannot suppress the Seckit audit. Semgrep exclusions are supplied by
-Seckit for the same generated/dependency directories excluded from Trivy.
+Seckit: `.git`, `.seckit`, `node_modules`, `.venv` and `venv` at any depth, and
+`dist`, `build`, `.next` and `vendor` only at the project root, so `src/build/`
+is still analysed. Trivy skips the same names at the project root. The list is
+returned in `coverage.excluded_dirs`. Source files over 5 MB are not analysed by
+Semgrep; they are listed in `coverage.oversized_source_files` and make the scan
+`incomplete`, so a project cannot hide code by padding a file.
 This uses `--x-ignore-semgrepignore-files` from the pinned Semgrep version;
 engine upgrades must pass the live suppression regression before changing the
 pin. Terminal output escapes nonprintable characters in finding paths; JSON
 retains the original paths for tools.
 
-Seckit invokes Trivy with explicit vulnerability, misconfiguration, and secret scanners, then invokes Semgrep with the local `seckit/rules` directory. It does not use the Semgrep Registry or download rule packs. Both scanners skip common generated/dependency trees. Semgrep version checks and metrics are disabled. JSON output is normalized to stable finding IDs, priority, severity, confidence, location, explanation, impact, remediation, conservative fix availability, classification, and verification status. Source snippets and secret matches are intentionally omitted; scanner diagnostics are reduced to counts to avoid leaking arbitrary scanner output.
+Seckit invokes Trivy with explicit vulnerability, misconfiguration, and secret scanners, then invokes Semgrep with the local `seckit/rules` directory. It does not use the Semgrep Registry or download rule packs. Both scanners skip common generated/dependency trees (see above). Semgrep version checks and metrics and Trivy telemetry and version checks are disabled; see [Network](setup.md#network) for what may reach the network and when. JSON output is normalized to stable finding IDs, priority, severity, confidence, location, explanation, impact, remediation, conservative fix availability, classification, and verification status. Source snippets and secret matches are omitted by construction: Trivy secret findings carry only the rule title and line, and Trivy misconfiguration findings carry the check's own title and description, never its `Message`, which quotes the offending project line (for example a `RUN` command with a token in it). Scanner diagnostics are reduced to counts. Other fields can still contain repository text, such as file names; the result lists them in `untrusted_data`, and an agent must treat them as data.
 
 Trivy's filesystem scanner supports local project scanning and JSON output. It can report dependency vulnerabilities, configuration findings, and secrets; Seckit maps those result types into its common schema. Its machine-readable output and filesystem command are documented in the [Trivy filesystem CLI reference](https://www.trivy.dev/docs/latest/guide/references/configuration/cli/trivy_filesystem/) and [filesystem scanning guide](https://trivy.dev/docs/latest/target/filesystem/).
 
@@ -25,7 +30,8 @@ The real-engine benchmark (`python benchmarks/run.py`, labels in `benchmarks/lab
 ## Accepted findings: `.seckit/ignore.json`
 
 Scanner ignore files stay disabled, because a repository must not hide its own
-findings. Seckit has one explicit mechanism instead:
+findings. Seckit has one explicit mechanism instead, and because the file is part
+of the project, it takes effect only after the user accepts it on their machine:
 
 ```json
 {"ignore": [
@@ -39,6 +45,15 @@ for a subtree), `id` or `rule_id`; all given keys must match. Matching findings
 leave `findings` (so they do not affect the exit code) and appear in
 `suppressed` with `suppressed_reason`. Invalid entries are skipped and listed
 in `warnings`. Agents must not add entries unless the user asks.
+
+The file's author controls it, and for a cloned or downloaded project that is
+not the user. So suppressions apply only to the exact bytes the user accepted
+with `seckit trust`, which shows the rules and reasons and asks for confirmation
+in a terminal (it refuses without one, so an agent cannot accept on the user's
+behalf). Until then, and again after any change to the file, matching findings
+stay in `findings` and count toward the exit code, and `warnings` says that the
+file is not accepted. The record of accepted files lives in the user cache
+(`trust.json`), outside every project.
 
 Dependency findings include `package`, `installed_version` and `fixed_version`
 (null when no patched release is known), so an agent can bump the version

@@ -1,7 +1,9 @@
 """Reviewer verdicts kept in `.seckit/triage.json`.
 
 Triage annotates findings; it never hides them. Suppression stays the job of
-`.seckit/ignore.json`, which only the project owner should edit.
+`.seckit/ignore.json`. Verdicts in a file this machine did not write or accept
+(`seckit trust`), such as one shipped with an untrusted repository, are not
+applied: they would otherwise become SARIF suppressions and agent-visible text.
 """
 from __future__ import annotations
 
@@ -10,6 +12,8 @@ import os
 import time
 from pathlib import Path
 from typing import Any
+
+from . import trust
 
 FILE = Path(".seckit") / "triage.json"
 VERDICTS = ("true_positive", "false_positive", "needs_info", "fixed")
@@ -22,7 +26,11 @@ def _existing(root: Path) -> Path:
     return old if not target.exists() and not (Path(root) / FILE.parent).exists() and old.is_file() else target
 
 
-def load(root: Path) -> dict[str, dict[str, Any]]:
+def _relative(root: Path) -> str:
+    return _existing(root).relative_to(Path(root)).as_posix()
+
+
+def _read(root: Path) -> dict[str, dict[str, Any]]:
     target = _existing(root)
     if target.is_symlink() or not target.is_file():
         return {}
@@ -30,9 +38,22 @@ def load(root: Path) -> dict[str, dict[str, Any]]:
         if target.stat().st_size > 2_000_000:
             return {}
         data = json.loads(target.read_text(encoding="utf-8")).get("triage", {})
-    except (OSError, ValueError, AttributeError):
+        if not isinstance(data, dict):
+            return {}
+    except (OSError, ValueError, AttributeError, RecursionError):
         return {}
     return {k: v for k, v in data.items() if isinstance(k, str) and isinstance(v, dict) and v.get("verdict") in VERDICTS}
+
+
+def accepted(root: Path) -> bool:
+    """True when there is no triage file or its exact bytes were written or accepted here."""
+    target = _existing(root)
+    return not (target.exists() or target.is_symlink()) or trust.is_trusted(root, _relative(root))
+
+
+def load(root: Path) -> dict[str, dict[str, Any]]:
+    """Verdicts that may annotate reports: only from an accepted file."""
+    return _read(root) if accepted(root) else {}
 
 
 def record(root: Path, finding_id: str, verdict: str, reason: str, evidence: str = "") -> dict[str, Any]:
@@ -47,7 +68,9 @@ def record(root: Path, finding_id: str, verdict: str, reason: str, evidence: str
     if folder.is_symlink() or (root / FILE).is_symlink():
         raise ValueError(".seckit/triage.json must not be a symlink")
     folder.mkdir(exist_ok=True)
-    entries = load(root)
+    was_accepted = accepted(root)
+    # Keep every existing verdict; an unaccepted file stays unaccepted after this write.
+    entries = _read(root)
     entry = {"verdict": verdict, "reason": reason.strip(), "updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     if evidence:
         entry["evidence"] = str(evidence)[:4000]
@@ -55,10 +78,19 @@ def record(root: Path, finding_id: str, verdict: str, reason: str, evidence: str
     temp = folder / f".triage.{os.getpid()}.tmp"
     temp.write_text(json.dumps({"triage": dict(sorted(entries.items()))}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     os.replace(temp, root / FILE)
-    return {"id": finding_id.strip(), **entry}
+    if was_accepted:
+        try:
+            trust.remember(root, [FILE.as_posix()])
+        except OSError:
+            was_accepted = False
+    return {"id": finding_id.strip(), **entry, "applied": was_accepted}
 
 
 def annotate(root: Path, report: dict[str, Any]) -> dict[str, Any]:
+    if not accepted(root) and _read(root):
+        notice = trust.untrusted_notice(_relative(root), "its verdicts were not applied")
+        if notice not in report.setdefault("warnings", []):
+            report["warnings"].append(notice)
     entries = load(root)
     if entries:
         for key in ("findings", "suppressed"):

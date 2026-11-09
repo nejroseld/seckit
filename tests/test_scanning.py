@@ -106,16 +106,32 @@ class ScanningTests(unittest.TestCase):
         self.assertNotIn("do-not-leak", json.dumps(finding))
 
     def test_scan_reports_missing_executables_as_errors(self):
-        result = scan(self.root, "not-a-real-trivy", "not-a-real-semgrep")
+        result = scan(self.root, "not-a-real-trivy", "not-a-real-semgrep", cache=self.root)
         self.assertEqual(result["findings"], [])
         self.assertEqual(len(result["errors"]), 2)
 
     @patch("seckit.scanning.subprocess.run")
     def test_scan_requests_explicit_scanners_pruning_and_local_semgrep_rules(self, run):
         run.return_value = subprocess.CompletedProcess([], 0, stdout='{"Results":[]}', stderr="")
-        scan(self.root, "trivy", "semgrep")
-        trivy_command, semgrep_command = (call.args[0] for call in run.call_args_list)
+        scan(self.root, "trivy", "semgrep", cache=self.root)
+        update_command, trivy_command, semgrep_command = (call.args[0] for call in run.call_args_list)
+        update_env, trivy_env, semgrep_env = (call.kwargs["env"] for call in run.call_args_list)
         self.assertIn("vuln,misconfig,secret", trivy_command)
+        # The network phase only ever sees an empty directory, never the project.
+        self.assertNotEqual(update_command[-1], str(self.root))
+        self.assertNotIn(str(self.root.resolve()), update_command[-1:])
+        for flag in ("--skip-db-update", "--skip-check-update", "--skip-java-db-update", "--offline-scan",
+                     "--disable-telemetry", "--skip-version-check"):
+            self.assertIn(flag, trivy_command)
+        for flag in ("--disable-telemetry", "--skip-version-check"):
+            self.assertIn(flag, update_command)
+        # While a scanner reads the project, every proxy points at a refusing local port.
+        for env in (trivy_env, semgrep_env):
+            self.assertTrue(env["HTTPS_PROXY"].startswith("http://127.0.0.1:"))
+            self.assertEqual(env["GIT_ALLOW_PROTOCOL"], "seckit-none")
+        self.assertEqual(trivy_env["PATH"], "")
+        self.assertIn("/build", semgrep_command)
+        self.assertNotIn("build", semgrep_command)
         for flag in ("--config", "--ignorefile", "--secret-config"):
             self.assertEqual(trivy_command[trivy_command.index(flag) + 1], "")
         self.assertIn("--skip-dirs", trivy_command)
@@ -126,7 +142,7 @@ class ScanningTests(unittest.TestCase):
     def test_scanner_diagnostic_text_is_not_returned(self, run):
         run.return_value = subprocess.CompletedProcess([], 0,
             stdout=json.dumps({"Results": [], "Errors": [{"Message": "secret=do-not-leak"}]}), stderr="")
-        result = scan(self.root, "trivy", "semgrep")
+        result = scan(self.root, "trivy", "semgrep", cache=self.root)
         self.assertIn("Trivy reported 1 scan error(s)", result["errors"])
         self.assertNotIn("do-not-leak", json.dumps(result))
 
@@ -148,9 +164,10 @@ class ScanningTests(unittest.TestCase):
         trivy = {"Results": [{"Target": "Dockerfile", "Misconfigurations": [
             {"ID": "DS-0031", "Title": "Secret in ENV", "Severity": "CRITICAL", "CauseMetadata": {"StartLine": 2}}],
             "Secrets": [{"RuleID": "github-pat", "Title": "GitHub token", "Severity": "HIGH", "StartLine": 2}]}]}
-        run.side_effect = [subprocess.CompletedProcess([], 0, stdout=json.dumps(trivy), stderr=""),
+        run.side_effect = [subprocess.CompletedProcess([], 0, stdout='{"Results":[]}', stderr=""),
+                           subprocess.CompletedProcess([], 0, stdout=json.dumps(trivy), stderr=""),
                            subprocess.CompletedProcess([], 0, stdout='{"results":[]}', stderr="")]
-        report = scan(self.root, "trivy", "semgrep")
+        report = scan(self.root, "trivy", "semgrep", cache=self.root)
         self.assertEqual(len(report["findings"]), 1)
         finding = report["findings"][0]
         self.assertEqual(finding["rule_id"], "github-pat")

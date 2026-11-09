@@ -1,5 +1,6 @@
 """Real-engine acceptance checks on disposable fixtures. Never executes fixture code."""
 from pathlib import Path
+import hashlib
 import json
 import shutil
 import subprocess
@@ -29,6 +30,11 @@ def main():
     with tempfile.TemporaryDirectory(prefix='seckit-acceptance-') as tmp:
         project = Path(tmp) / 'project'
         shutil.copytree(ROOT / 'benchmarks/fixtures/positive', project)
+        # Trivy allowlists values containing "example", and a committed token-shaped
+        # literal trips push protection, so the fake token is built here instead.
+        dockerfile = project / 'Dockerfile'
+        fake_token = 'ghp_' + hashlib.sha256(b'seckit-acceptance-fixture').hexdigest()[:36]
+        dockerfile.write_text(dockerfile.read_text().replace('__FAKE_GITHUB_TOKEN__', fake_token))
         # Represent unrelated pre-existing local edits; fixes must preserve exact bytes.
         unrelated = project / 'unrelated.txt'
         unrelated.write_text('Uncommitted local edit\n')

@@ -14,7 +14,7 @@ from typing import Any
 
 from . import ignores
 from .audit import iter_files, read_text, snippet
-from .scanning import _finding
+from .scanning import UNTRUSTED, _finding
 
 _INSTALL_SCRIPTS = ("preinstall", "install", "postinstall", "prepare", "prepublish")
 _URL_SPEC = re.compile(r"^(?:git\+|git:|github:|gitlab:|bitbucket:|https?://|file:|link:)|^[\w.-]+/[\w.-]+(?:#.*)?$")
@@ -68,12 +68,12 @@ def _npm(root: Path, rel: str, path: Path, out: list) -> None:
             deps_total += 1
             spec = str(spec).strip()
             if _URL_SPEC.match(spec) and not spec.startswith("npm:"):
-                _add(out, "seckit.supply-chain.npm-url-dependency", f"{name} is installed from a URL or git, not the registry", "MEDIUM",
+                _add(out, "seckit.supply-chain.npm-url-dependency", f"{str(name)[:120]} is installed from a URL or git, not the registry", "MEDIUM",
                      rel, _line_of(text, f'"{name}"'), f"Spec `{spec[:200]}` bypasses registry integrity and version immutability.",
                      "The referenced code can change without a version bump or be replaced by whoever controls the URL.",
                      "Publish to the registry or pin to an exact commit hash and verify its owner.", root, identity=name)
             elif spec.lower() in _FLOATING:
-                _add(out, "seckit.supply-chain.npm-floating-version", f"{name} uses a floating version `{spec or '(empty)'}`", "MEDIUM",
+                _add(out, "seckit.supply-chain.npm-floating-version", f"{str(name)[:120]} uses a floating version `{spec or '(empty)'}`", "MEDIUM",
                      rel, _line_of(text, f'"{name}"'), "Any future release, including a compromised one, is accepted.",
                      "A malicious publish of this package would be installed automatically.",
                      "Pin a version range and commit a lockfile.", root, identity=name)
@@ -223,7 +223,10 @@ def scan(root: Path) -> dict[str, Any]:
     """Run all offline supply-chain checks; returns normalized findings."""
     root = Path(root).resolve()
     out: list[dict[str, Any]] = []
-    for rel, path in iter_files(root, None):
+    errors: list[str] = []
+    walk: dict[str, Any] = {}
+    # Lockfiles are often larger than the 1 MB source limit; they are read only when matched.
+    for rel, path in iter_files(root, None, stats=walk, max_size=_MAX_MANIFEST):
         name = path.name
         try:
             if name == "package.json":
@@ -236,9 +239,25 @@ def scan(root: Path) -> dict[str, Any]:
                 _workflow(root, rel, path, out)
             elif name == "Dockerfile" or name.startswith("Dockerfile.") or name.endswith(".Dockerfile"):
                 _dockerfile(root, rel, path, out)
-        except (OSError, ValueError, TypeError, AttributeError):
-            continue
+        except (OSError, ValueError, TypeError, AttributeError, RecursionError):
+            errors.append(f"Supply-chain check could not parse {rel[:200]}")
     order = {"P0": 0, "P1": 1, "P2": 2, "P3": 3, "P4": 4}
     unique = {f["id"]: f for f in out}
     findings = sorted(unique.values(), key=lambda f: (order[f["priority"]], f["file"], f["line"]))
-    return ignores.apply(root, {"findings": findings, "errors": []})
+    relevant = [rel for rel in walk["oversized"] if _relevant(rel)]
+    if relevant:
+        errors.append(f"Supply-chain check skipped {len(relevant)} manifest(s) over {_MAX_MANIFEST // 1_000_000} MB")
+    if walk["truncated"]:
+        errors.append("Supply-chain check stopped after 20000 files; manifests and workflows after that were not read")
+    return ignores.apply(root, {"findings": findings, "errors": errors, "untrusted_data": UNTRUSTED})
+
+
+_MAX_MANIFEST = 64_000_000
+
+
+def _relevant(rel: str) -> bool:
+    name = rel.rsplit("/", 1)[-1]
+    return (name in ("package.json", "package-lock.json", "npm-shrinkwrap.json")
+            or re.fullmatch(r"(?:.*[-_.])?requirements(?:[-_.].*)?\.(?:txt|in)", name) is not None
+            or (rel.startswith(".github/workflows/") and name.endswith((".yml", ".yaml")))
+            or name == "Dockerfile" or name.startswith("Dockerfile.") or name.endswith(".Dockerfile"))
